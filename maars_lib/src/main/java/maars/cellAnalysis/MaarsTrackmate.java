@@ -20,9 +20,16 @@ public class MaarsTrackmate {
 
    private Settings settings;
 
-   public MaarsTrackmate(ImagePlus img, double radius, double quality) {
+   public MaarsTrackmate(ImagePlus img, double radius, double quality, boolean gaussian_blur) {
+      if (gaussian_blur){
+         IJ.run(img, "Gaussian Blur 3D...", "x=1.2 y=1.2 z=2.4");
+         while (IJ.macroRunning()){
+            IJ.wait(200);
+         }
+      }
+
       settings = new Settings();
-      settings.setFrom(img);
+      settings.setFrom(ImgUtils.zProject(img, img.getCalibration()));
 
       // Computer different features (in order)
 
@@ -63,16 +70,14 @@ public class MaarsTrackmate {
    }
 
    public static void executeTrackmate(ImagePlus img, double spotRadius, double quality) {
-      if (img != null) {
-         ImagePlus zProjectedFluoImg = ImgUtils.zProject(img, img.getCalibration());
-         MaarsTrackmate tmTest = new MaarsTrackmate(zProjectedFluoImg, spotRadius, quality);
-         Model model = tmTest.doDetection();
-         model.getSpots().setVisible(true);
-         SelectionModel selectionModel = new SelectionModel(model);
-         HyperStackDisplayer displayer = new HyperStackDisplayer(model, selectionModel, zProjectedFluoImg);
-         IJ.run(zProjectedFluoImg, "Enhance Contrast", "saturated=0.35");
-         displayer.render();
-         displayer.refresh();
-      }
+      assert img != null;
+      MaarsTrackmate tmTest = new MaarsTrackmate(img.duplicate(), spotRadius, quality, true);
+      Model model = tmTest.doDetection();
+      model.getSpots().setVisible(true);
+      SelectionModel selectionModel = new SelectionModel(model);
+      HyperStackDisplayer displayer = new HyperStackDisplayer(model, selectionModel, tmTest.settings.imp);
+      IJ.run(tmTest.settings.imp, "Enhance Contrast", "saturated=0.35");
+      displayer.render();
+      displayer.refresh();
    }
 }

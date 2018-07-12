@@ -135,10 +135,8 @@ public class MaarsFluoAnalysis implements Runnable{
          for (int j = 1; j <= totalChannel; j++) {
             String channel = arrayChannels[j - 1];
             IJ.log("Processing channel " + channel + "_" + i);
-            ImagePlus zProjectedFluoImg = ImgUtils.zProject(
-                  duplicator.run(concatenatedFluoImgs, j, j, 1, totalSlice, i, i)
-                  , concatenatedFluoImgs.getCalibration());
-            Future future = es.submit(new FluoAnalyzer(zProjectedFluoImg, zProjectedFluoImg.getCalibration(),
+            ImagePlus slicedImg = duplicator.run(concatenatedFluoImgs, j, j, 1, totalSlice, i, i);
+            Future future = es.submit(new FluoAnalyzer(slicedImg, concatenatedFluoImgs.getCalibration(),
                   soc, channel, Integer.parseInt(parameters.getChMaxNbSpot(channel)),
                   Double.parseDouble(parameters.getChSpotRaius(channel)),
                   Double.parseDouble(parameters.getChQuality(channel)), i, socVisualizer,
@@ -208,7 +206,8 @@ public class MaarsFluoAnalysis implements Runnable{
       IJ.log("Start python analysis");
       String pos = soc.getPosLabel();
       String pathToRoot = parameters.getSavingPath() + File.separator;
-      String mitoDir = pathToRoot + MITODIRNAME + File.separator + pos + File.separator;
+      String mitoDir = pathToRoot + parameters.getFluoParameter(MaarsParameters.FLUO_PREFIX)+"_"+MITODIRNAME
+            + File.separator + pos + File.separator;
       FileUtils.createFolder(mitoDir);
       Boolean dynamic = parameters.useDynamic();
       String dynaOrstatic;

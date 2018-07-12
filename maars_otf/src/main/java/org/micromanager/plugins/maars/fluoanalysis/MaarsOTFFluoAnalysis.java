@@ -76,9 +76,8 @@ public class MaarsOTFFluoAnalysis extends Processor {
       if (currentChImgs.size() == mm_.acquisitions().getAcquisitionSettings().slices.size() && isOk){
          chZstacks.get(currentCh).clear();
          ImagePlus imp = ImgMMUtils.convertWithMetadata(currentChImgs, mm_.getCachedPixelSizeUm());
-         ImagePlus zProjectedFluoImg = ImgUtils.zProject(imp, cal_);
          try {
-            es_.submit(new FluoAnalyzer(zProjectedFluoImg, cal_,
+            es_.submit(new FluoAnalyzer(imp, cal_,
                   posSoc_.get(currentPos), currentCh, Integer.parseInt(parameters_.getChMaxNbSpot(currentCh)),
                   Double.parseDouble(parameters_.getChSpotRaius(currentCh)),
                   Double.parseDouble(parameters_.getChQuality(currentCh)), image.getCoords().getTime(),

@@ -61,11 +61,7 @@ public class DefaultBatchSegmentation extends AbstractOp implements BatchSegment
             if (splitted){
                imgPath = serieNbPos.get(serie);
                logger.info(imgPath);
-               try {
-                  currentImp = ImgUtils.lociImport(imgPath);
-               } catch (IOException | FormatException e) {
-                  e.printStackTrace();
-               }
+               currentImp = ImgUtils.lociImport(imgPath);
                posName = ImgUtils.getPosNameFromFileName(imgPath);
             }else{
                posName = serieNbPos.get(serie);

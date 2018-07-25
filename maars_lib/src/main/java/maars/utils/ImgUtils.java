@@ -1,11 +1,13 @@
 package maars.utils;
 
 import ij.IJ;
+import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.measure.Calibration;
+import ij.plugin.ChannelSplitter;
 import ij.plugin.RoiScaler;
 import ij.plugin.ZProjector;
 import loci.formats.FormatException;
@@ -16,6 +18,7 @@ import loci.plugins.BF;
 import loci.plugins.in.ImporterOptions;
 import maars.segmentPombe.SegPombeParameters;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -297,7 +300,7 @@ public class ImgUtils {
       return lociImport(tiffPath, serie_number, true);
    }
    
-   public static ImagePlus lociImport(String tiffPath) throws IOException, FormatException {
+   public static ImagePlus lociImport(String tiffPath){
       IJ.run("Bio-Formats Importer", "open="+tiffPath+" color_mode=Default open_files view=Hyperstack stack_order=XYCZT");
       ImagePlus imp = IJ.getImage();
       imp.hide();
@@ -307,8 +310,8 @@ public class ImgUtils {
    public static ImagePlus lociImport(String tiffPath, int serie_number, Boolean virtual) throws IOException, FormatException {
       ImporterOptions options = new ImporterOptions();
       options.setVirtual(virtual);
-      options.setGroupFiles(true);
-      options.setMustGroup(true);
+      options.setGroupFiles(false);
+      options.setMustGroup(false);
       options.setId(tiffPath);
       options.setStackFormat("Hyperstack");
       options.clearSeries();
@@ -383,4 +386,30 @@ public class ImgUtils {
       }
       return seriesImgNames;
    }
+
+   public static ImagePlus[] alignChannels(ImagePlus imp, String savingPath, String[] arrayChannels) {
+      IJ.run(imp, "Z Project...", "projection=[Max Intensity] all");
+      ImagePlus projected = IJ.getImage();
+      projected.hide();
+      String ch1_name, ch2_name, tranfoFileName;
+      ch1_name = arrayChannels[0];
+      ch2_name = arrayChannels[1];
+      tranfoFileName = "transformation_from_" + arrayChannels[1] + ".txt";
+      ImageStack ch2_stack = ChannelSplitter.getChannel(projected, 2);
+      ImagePlus ch2_imp = new ImagePlus(ch2_name, ch2_stack);
+      ImageStack ch1_stack = ChannelSplitter.getChannel(projected, 1);
+      ImagePlus ch1_imp = new ImagePlus(ch1_name, ch1_stack);
+      ch1_imp.show();
+      ch2_imp.show();
+      IJ.run(ch2_imp, "MultiStackReg", "stack_1=[" + ch2_name + "] action_1=Align file_1=["
+            + savingPath + File.separator + tranfoFileName +
+            "] stack_2=None action_2=Ignore file_2=[] transformation=Translation save");
+      IJ.run(ch1_imp, "MultiStackReg", "stack_1=[" + ch1_name + "] action_1=[Load Transformation File]" +
+            " file_1=" + savingPath + File.separator + tranfoFileName +
+            " stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+      ch1_imp.hide();
+      ch2_imp.hide();
+      return new ImagePlus[]{ch1_imp, ch2_imp};
+   }
+
 }

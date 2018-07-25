@@ -42,15 +42,15 @@ public class MaarsFluoAnalysis implements Runnable{
    private MaarsParameters parameters_;
    private SOCVisualizer visualizer;
    private String[] usingChannels;
+   private String fluoDir;
    public MaarsFluoAnalysis(MaarsParameters parameters, String suffix){
-      String fluoDir = FileUtils.convertPath(parameters.getSavingPath()) + File.separator +
+      fluoDir = FileUtils.convertPath(parameters.getSavingPath()) + File.separator +
             parameters.getFluoParameter(MaarsParameters.FLUO_PREFIX);
       FLUOIMGPATH = Objects.requireNonNull(new File(fluoDir).listFiles(
             (FilenameFilter) new WildcardFileFilter("*." + suffix)))[0].getAbsolutePath();
       serieNbPos = ImgUtils.populateSeriesImgNames(FLUOIMGPATH);
       parameters_ = parameters;
       usingChannels = parameters_.getUsingChannels().split(",", -1);
-      IJ.log(usingChannels[0]);
       visualizer = new SOCVisualizer(usingChannels);
       visualizer.setVisible(true);
    }
@@ -88,7 +88,7 @@ public class MaarsFluoAnalysis implements Runnable{
             CopyOnWriteArrayList<Map<String, Future>> tasksSet = new CopyOnWriteArrayList<>();
             try {
                concatenatedFluoImgs = processStackedImg(FLUOIMGPATH, serie,
-                           parameters_, soc, visualizer, tasksSet, stop);
+                           parameters_, soc, visualizer, tasksSet, true, true, stop);
             } catch (IOException | FormatException e) {
                e.printStackTrace();
             }
@@ -119,24 +119,41 @@ public class MaarsFluoAnalysis implements Runnable{
 
    private ImagePlus processStackedImg(String imgPath, int serie, MaarsParameters parameters, DefaultSetOfCells soc,
                                        SOCVisualizer socVisualizer, CopyOnWriteArrayList<Map<String, Future>> tasksSet,
-                                       AtomicBoolean stop) throws IOException, FormatException {
+                                       boolean gaussian_blur, boolean align, AtomicBoolean stop) throws IOException, FormatException {
       ImagePlus concatenatedFluoImgs = ImgUtils.lociImport(imgPath, serie);
 
-      String[] arrayChannels = parameters.getUsingChannels().split(",");
-
       int totalChannel = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeC"));
-      int totalSlice = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeZ"));
       int totalFrame = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeT"));
+//      int totalSlice = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeZ"));
 
-      ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+      String processedImgFolder = fluoDir + "_" + serieNbPos.get(serie);
+      if (gaussian_blur){
+         FileUtils.createFolder(processedImgFolder);
+         IJ.log("Denoising the image with z-blurring...");
+         IJ.run(concatenatedFluoImgs, "Gaussian Blur 3D...", "x=1.2 y=1.2 z=2.4");
+         IJ.saveAsTiff(concatenatedFluoImgs, processedImgFolder + File.separator + "denoised");
+      }
+      ImagePlus[] processedImps = null;
+      if (align){
+         FileUtils.createFolder(processedImgFolder);
+         IJ.log("Correcting image drifts with MultiStackReg...");
+         processedImps = ImgUtils.alignChannels(concatenatedFluoImgs, processedImgFolder, usingChannels);
+         for (int i = 0; i < totalChannel; i++) {
+            processedImps[i].setCalibration(concatenatedFluoImgs.getCalibration());
+            IJ.saveAsTiff(processedImps[i], processedImgFolder + File.separator + usingChannels[i] + "_aligned");
+         }
+      }
+      System.gc();
+      assert processedImps != null;
       Duplicator duplicator = new Duplicator();
+      ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
       for (int i = 1; i <= totalFrame; i++) {
          Map<String, Future> chAnalysisTasks = new HashMap<>();
-         for (int j = 1; j <= totalChannel; j++) {
-            String channel = arrayChannels[j - 1];
+         for (int j = 0; j <= totalChannel; j++) {
+            String channel = usingChannels[j];
             IJ.log("Processing channel " + channel + "_" + i);
-            ImagePlus slicedImg = duplicator.run(concatenatedFluoImgs, j, j, 1, totalSlice, i, i);
-            Future future = es.submit(new FluoAnalyzer(slicedImg, concatenatedFluoImgs.getCalibration(),
+            ImagePlus slicedImg = duplicator.run(processedImps[j], i, i);
+            Future future = es.submit(new FluoAnalyzer(slicedImg, slicedImg.getCalibration(),
                   soc, channel, Integer.parseInt(parameters.getChMaxNbSpot(channel)),
                   Double.parseDouble(parameters.getChSpotRaius(channel)),
                   Double.parseDouble(parameters.getChQuality(channel)), i, socVisualizer,

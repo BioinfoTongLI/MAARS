@@ -20,16 +20,10 @@ public class MaarsTrackmate {
 
    private Settings settings;
 
-   public MaarsTrackmate(ImagePlus img, double radius, double quality, boolean gaussian_blur) {
-      if (gaussian_blur){
-         IJ.run(img, "Gaussian Blur 3D...", "x=1.2 y=1.2 z=2.4");
-         while (IJ.macroRunning()){
-            IJ.wait(200);
-         }
-      }
+   public MaarsTrackmate(ImagePlus img, double radius, double quality) {
 
       settings = new Settings();
-      settings.setFrom(ImgUtils.zProject(img, img.getCalibration()));
+      settings.setFrom(img);
 
       // Computer different features (in order)
 
@@ -71,7 +65,7 @@ public class MaarsTrackmate {
 
    public static void executeTrackmate(ImagePlus img, double spotRadius, double quality) {
       assert img != null;
-      MaarsTrackmate tmTest = new MaarsTrackmate(img.duplicate(), spotRadius, quality, true);
+      MaarsTrackmate tmTest = new MaarsTrackmate(img.duplicate(), spotRadius, quality);
       Model model = tmTest.doDetection();
       model.getSpots().setVisible(true);
       SelectionModel selectionModel = new SelectionModel(model);

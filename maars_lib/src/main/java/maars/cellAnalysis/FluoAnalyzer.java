@@ -78,7 +78,7 @@ public class FluoAnalyzer implements Runnable {
       if (fluoImage.getCalibration().getUnit().equals("cm")) {
          fluoImage = ImgUtils.unitCmToMicron(fluoImage);
       }
-      MaarsTrackmate trackmate = new MaarsTrackmate(fluoImage, radius, quality, true);
+      MaarsTrackmate trackmate = new MaarsTrackmate(fluoImage, radius, quality);
       this.model = trackmate.doDetection();
       int nbCell = soc.size();
       collection = SpotsContainer.getNBestqualitySpots(model.getSpots(), nbCell, maxNbSpot);

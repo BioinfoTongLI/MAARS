@@ -1,11 +1,11 @@
 package maars.utils;
 
 import ij.IJ;
-import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
+import ij.io.FileInfo;
 import ij.measure.Calibration;
 import ij.plugin.ChannelSplitter;
 import ij.plugin.RoiScaler;
@@ -18,7 +18,6 @@ import loci.plugins.BF;
 import loci.plugins.in.ImporterOptions;
 import maars.segmentPombe.SegPombeParameters;
 
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -40,11 +39,13 @@ public class ImgUtils {
     */
    public static ImagePlus zProject(ImagePlus img, Calibration cal) {
       ZProjector projector = new ZProjector();
+      FileInfo info = img.getFileInfo();
       projector.setMethod(ZProjector.MAX_METHOD);
       projector.setImage(img);
       projector.doHyperStackProjection(true);
       ImagePlus projected = projector.getProjection();
       projected.setCalibration(cal);
+      projected.setFileInfo(info);
       return projected;
    }
 
@@ -387,31 +388,34 @@ public class ImgUtils {
       return seriesImgNames;
    }
 
-   public static ImagePlus[] alignChannels(ImagePlus imp, String savingPath, String[] arrayChannels) {
-      IJ.log("Z-projecting...");
-      IJ.run(imp, "Z Project...", "projection=[Max Intensity] all");
-      ImagePlus projected = IJ.getImage();
-      projected.hide();
-      String ch1_name, ch2_name, tranfoFileName;
-      ch1_name = arrayChannels[0];
-      ch2_name = arrayChannels[1];
-      tranfoFileName = "transformation_from_" + arrayChannels[1] + ".txt";
-      ImageStack ch2_stack = ChannelSplitter.getChannel(projected, 2);
-      ImagePlus ch2_imp = new ImagePlus(ch2_name, ch2_stack);
-      ImageStack ch1_stack = ChannelSplitter.getChannel(projected, 1);
-      ImagePlus ch1_imp = new ImagePlus(ch1_name, ch1_stack);
-      ch1_imp.show();
-      ch2_imp.show();
+   public static ImagePlus[] alignChannels(ImagePlus[] blurredImps, String savingPath, String[] arrayChannels) {
+      ImagePlus[] projectedImps = new ImagePlus[blurredImps.length];
+      for (int i = 0 ;  i < blurredImps.length; i++) {
+         IJ.log("Z-projecting...");
+         IJ.run(blurredImps[i], "Z Project...", "projection=[Max Intensity] all");
+         projectedImps[i] = IJ.getImage();
+      }
+      String tranfoFileName = "transformation_from_" + arrayChannels[1] + ".txt";
       IJ.log("Correcting image drifts with MultiStackReg...");
-      IJ.run(ch2_imp, "MultiStackReg", "stack_1=[" + ch2_name + "] action_1=Align file_1=["
-            + savingPath + File.separator + tranfoFileName +
+      IJ.run(projectedImps[1], "MultiStackReg", "stack_1=[" + projectedImps[1].getTitle() +
+              "] action_1=Align file_1=[" + savingPath + File.separator + tranfoFileName +
             "] stack_2=None action_2=Ignore file_2=[] transformation=Translation save");
-      IJ.run(ch1_imp, "MultiStackReg", "stack_1=[" + ch1_name + "] action_1=[Load Transformation File]" +
-            " file_1=" + savingPath + File.separator + tranfoFileName +
-            " stack_2=None action_2=Ignore file_2=[] transformation=Translation");
-      ch1_imp.hide();
-      ch2_imp.hide();
-      return new ImagePlus[]{ch1_imp, ch2_imp};
+      IJ.run(projectedImps[0], "MultiStackReg", "stack_1=[" + projectedImps[0].getTitle() +
+              "] action_1=[Load Transformation File] file_1=" + savingPath + File.separator + tranfoFileName +
+              " stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+      for (ImagePlus im : projectedImps) {
+         im.hide();
+      }
+      return projectedImps;
+   }
+
+   public static ImagePlus[] blurChannels(ImagePlus imp){
+      ImagePlus[] blurredChannels = ChannelSplitter.split(imp);
+      IJ.log("Denoising the image with z-blurring...");
+      for (ImagePlus im : blurredChannels){
+         IJ.run(im, "Gaussian Blur 3D...", "x=1.2 y=1.2 z=2.4");
+      }
+      return blurredChannels;
    }
 
 }

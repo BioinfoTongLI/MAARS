@@ -71,7 +71,7 @@
             <groupId>net.imagej</groupId>
             <artifactId>imagej-ops</artifactId>
             <version>0.39.0</version>
-            <scope>runtime</scope>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

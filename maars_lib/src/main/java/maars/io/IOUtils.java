@@ -54,7 +54,7 @@ public class IOUtils {
       }
    }
 
-   public static void saveAll(DefaultSetOfCells soc, ImagePlus mergedImg, String pathToDir,
+   public static void saveAll(DefaultSetOfCells soc, ImagePlus[] processStack, String pathToDir,
                               Boolean useDynamic, ArrayList<String> arrayChannels, String posNb, String prefix) {
       IJ.log("Saving information of each cell on disk");
       String dest = pathToDir + prefix + Maars_Interface.FLUOANALYSIS_SUFFIX + posNb + File.separator;
@@ -71,10 +71,9 @@ public class IOUtils {
 //        for (Cell cell : soc){
          geoSaver.save(cell);
          spotSaver.save(cell);
-         mergedImg.setRoi(cell.getCellShapeRoi());
-         for (int j = 1; j <= mergedImg.getNChannels(); j++) {
-            croppedImg = duplicator.run(mergedImg, j, j, 1, mergedImg.getNSlices(),
-                  1, mergedImg.getNFrames());
+         for (int j = 1; j <= arrayChannels.size(); j++) {
+            processStack[j-1].setRoi(cell.getCellShapeRoi());
+            croppedImg = duplicator.run(processStack[j-1], 1, processStack[j-1].getNFrames());
             IJ.run(croppedImg, "Grays", "");
             croppedImg.setRoi(ImgUtils.centerCroppedRoi(cell.getCellShapeRoi()));
             imgSaver.saveImgs(croppedImg, i, arrayChannels.get(j - 1), false);
@@ -83,6 +82,5 @@ public class IOUtils {
       if (useDynamic) {
          IOUtils.serializeSoc(dest, soc);
       }
-      mergedImg.hide();
    }
 }

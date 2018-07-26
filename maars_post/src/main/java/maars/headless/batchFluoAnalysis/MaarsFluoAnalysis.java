@@ -2,6 +2,7 @@ package maars.headless.batchFluoAnalysis;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.plugin.Duplicator;
 
@@ -66,7 +67,7 @@ public class MaarsFluoAnalysis implements Runnable{
             parameters_.getSegmentationParameter(MaarsParameters.SEG_PREFIX) + Maars_Interface.SEGANALYSIS_SUFFIX;
       for (int serie : serieNbPos.keySet()) {
          String posName = serieNbPos.get(serie);
-         ImagePlus concatenatedFluoImgs = null;
+         ImagePlus[] processStack = null;
          soc = new DefaultSetOfCells(posName);
          String currentPosPrefix = segAnaDir + posName + File.separator;
          String currentZipPath = currentPosPrefix + "ROI.zip";
@@ -89,12 +90,12 @@ public class MaarsFluoAnalysis implements Runnable{
             }
             CopyOnWriteArrayList<Map<String, Future>> tasksSet = new CopyOnWriteArrayList<>();
             try {
-               concatenatedFluoImgs = processStackedImg(FLUOIMGPATH, serie,
+               processStack = processStackedImg(FLUOIMGPATH, serie,
                            parameters_, soc, visualizer, tasksSet, true, true, stop);
             } catch (IOException | FormatException e) {
                e.printStackTrace();
             }
-            concatenatedFluoImgs.getCalibration().frameInterval =
+            processStack[0].getCalibration().frameInterval =
                   Double.parseDouble(parameters_.getFluoParameter(MaarsParameters.TIME_INTERVAL)) / 1000;
             Maars_Interface.waitAllTaskToFinish(tasksSet);
             if (!stop.get() && soc.size() != 0) {
@@ -103,11 +104,11 @@ public class MaarsFluoAnalysis implements Runnable{
                Collections.addAll(arrayChannels, parameters_.getUsingChannels().split(",", -1));
                FileUtils.createFolder(parameters_.getSavingPath() + File.separator + parameters_.getFluoParameter(MaarsParameters.FLUO_PREFIX)
                      +Maars_Interface.FLUOANALYSIS_SUFFIX);
-               IOUtils.saveAll(soc, concatenatedFluoImgs, parameters_.getSavingPath() + File.separator, parameters_.useDynamic(),
+               IOUtils.saveAll(soc, processStack, parameters_.getSavingPath() + File.separator, parameters_.useDynamic(),
                      arrayChannels, posName, parameters_.getFluoParameter(MaarsParameters.FLUO_PREFIX));
                IJ.log("It took " + (double) (System.currentTimeMillis() - startWriting) / 1000
                      + " sec for writing results");
-               analyzeMitosisDynamic(soc, parameters_, concatenatedFluoImgs.getCalibration().pixelWidth);
+               analyzeMitosisDynamic(soc, parameters_, processStack[0].getCalibration().pixelWidth);
             }
          }
          visualizer.clear();
@@ -119,7 +120,7 @@ public class MaarsFluoAnalysis implements Runnable{
       System.setOut(curr_out);
    }
 
-   private ImagePlus processStackedImg(String imgPath, int serie, MaarsParameters parameters, DefaultSetOfCells soc,
+   private ImagePlus[] processStackedImg(String imgPath, int serie, MaarsParameters parameters, DefaultSetOfCells soc,
                                        SOCVisualizer socVisualizer, CopyOnWriteArrayList<Map<String, Future>> tasksSet,
                                        boolean gaussian_blur, boolean align, AtomicBoolean stop) throws IOException, FormatException {
       ImagePlus concatenatedFluoImgs = ImgUtils.lociImport(imgPath, serie);
@@ -128,25 +129,28 @@ public class MaarsFluoAnalysis implements Runnable{
       int totalFrame = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeT"));
 //      int totalSlice = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeZ"));
 
+      ImagePlus[] processedImps = null;
       String processedImgFolder = fluoDir + "_processed_" + serieNbPos.get(serie);
       if (gaussian_blur){
          FileUtils.createFolder(processedImgFolder);
-         IJ.log("Denoising the image with z-blurring...");
-         IJ.run(concatenatedFluoImgs, "Gaussian Blur 3D...", "x=1.2 y=1.2 z=2.4");
-         IJ.saveAsTiff(concatenatedFluoImgs, processedImgFolder + File.separator + "denoised");
+         processedImps = ImgUtils.blurChannels(concatenatedFluoImgs);
+         for (int i = 0; i < totalChannel; i++) {
+            IJ.saveAsTiff(processedImps[i], processedImgFolder + File.separator + usingChannels[i]
+                    +"_denoised");
+         }
       }
-      ImagePlus[] processedImps = null;
+      concatenatedFluoImgs.close();
+      assert processedImps != null;
       if (align){
          FileUtils.createFolder(processedImgFolder);
-         processedImps = ImgUtils.alignChannels(concatenatedFluoImgs, processedImgFolder, usingChannels);
+         processedImps = ImgUtils.alignChannels(processedImps, processedImgFolder, usingChannels);
          for (int i = 0; i < totalChannel; i++) {
-            processedImps[i].setCalibration(concatenatedFluoImgs.getCalibration());
             IJ.saveAsTiff(processedImps[i], processedImgFolder + File.separator + usingChannels[i] + "_aligned");
          }
       }
+      System.gc();
       assert processedImps != null;
       ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-//      ExecutorService es = Executors.newFixedThreadPool(4);
       for (int i = 1; i <= totalFrame; i++) {
          Map<String, Future> chAnalysisTasks = new HashMap<>();
          for (int j = 0; j < totalChannel; j++) {
@@ -165,9 +169,8 @@ public class MaarsFluoAnalysis implements Runnable{
             break;
          }
       }
-      System.gc();
       es.shutdown();
-      return concatenatedFluoImgs;
+      return processedImps;
    }
 
    private static void findAbnormalCells(String mitoDir,

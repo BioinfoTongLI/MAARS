@@ -388,6 +388,7 @@ public class ImgUtils {
    }
 
    public static ImagePlus[] alignChannels(ImagePlus imp, String savingPath, String[] arrayChannels) {
+      IJ.log("Z-projecting...");
       IJ.run(imp, "Z Project...", "projection=[Max Intensity] all");
       ImagePlus projected = IJ.getImage();
       projected.hide();
@@ -401,6 +402,7 @@ public class ImgUtils {
       ImagePlus ch1_imp = new ImagePlus(ch1_name, ch1_stack);
       ch1_imp.show();
       ch2_imp.show();
+      IJ.log("Correcting image drifts with MultiStackReg...");
       IJ.run(ch2_imp, "MultiStackReg", "stack_1=[" + ch2_name + "] action_1=Align file_1=["
             + savingPath + File.separator + tranfoFileName +
             "] stack_2=None action_2=Ignore file_2=[] transformation=Translation save");

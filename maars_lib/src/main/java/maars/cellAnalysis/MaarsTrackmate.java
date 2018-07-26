@@ -9,7 +9,6 @@ import fiji.plugin.trackmate.features.spot.*;
 import fiji.plugin.trackmate.visualization.hyperstack.HyperStackDisplayer;
 import ij.IJ;
 import ij.ImagePlus;
-import maars.utils.ImgUtils;
 
 import java.util.HashMap;
 import java.util.Map;

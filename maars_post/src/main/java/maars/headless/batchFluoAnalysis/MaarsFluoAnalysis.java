@@ -43,6 +43,7 @@ public class MaarsFluoAnalysis implements Runnable{
    private SOCVisualizer visualizer;
    private String[] usingChannels;
    private String fluoDir;
+   private Duplicator duplicator;
    public MaarsFluoAnalysis(MaarsParameters parameters, String suffix){
       fluoDir = FileUtils.convertPath(parameters.getSavingPath()) + File.separator +
             parameters.getFluoParameter(MaarsParameters.FLUO_PREFIX);
@@ -53,6 +54,7 @@ public class MaarsFluoAnalysis implements Runnable{
       usingChannels = parameters_.getUsingChannels().split(",", -1);
       visualizer = new SOCVisualizer(usingChannels);
       visualizer.setVisible(true);
+      duplicator = new Duplicator();
    }
    @Override
    public void run() {
@@ -126,7 +128,7 @@ public class MaarsFluoAnalysis implements Runnable{
       int totalFrame = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeT"));
 //      int totalSlice = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeZ"));
 
-      String processedImgFolder = fluoDir + "_" + serieNbPos.get(serie);
+      String processedImgFolder = fluoDir + "_processed_" + serieNbPos.get(serie);
       if (gaussian_blur){
          FileUtils.createFolder(processedImgFolder);
          IJ.log("Denoising the image with z-blurring...");
@@ -136,20 +138,18 @@ public class MaarsFluoAnalysis implements Runnable{
       ImagePlus[] processedImps = null;
       if (align){
          FileUtils.createFolder(processedImgFolder);
-         IJ.log("Correcting image drifts with MultiStackReg...");
          processedImps = ImgUtils.alignChannels(concatenatedFluoImgs, processedImgFolder, usingChannels);
          for (int i = 0; i < totalChannel; i++) {
             processedImps[i].setCalibration(concatenatedFluoImgs.getCalibration());
             IJ.saveAsTiff(processedImps[i], processedImgFolder + File.separator + usingChannels[i] + "_aligned");
          }
       }
-      System.gc();
       assert processedImps != null;
-      Duplicator duplicator = new Duplicator();
       ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+//      ExecutorService es = Executors.newFixedThreadPool(4);
       for (int i = 1; i <= totalFrame; i++) {
          Map<String, Future> chAnalysisTasks = new HashMap<>();
-         for (int j = 0; j <= totalChannel; j++) {
+         for (int j = 0; j < totalChannel; j++) {
             String channel = usingChannels[j];
             IJ.log("Processing channel " + channel + "_" + i);
             ImagePlus slicedImg = duplicator.run(processedImps[j], i, i);
@@ -167,11 +167,7 @@ public class MaarsFluoAnalysis implements Runnable{
       }
       System.gc();
       es.shutdown();
-      if (Boolean.parseBoolean(parameters.getProjected())) {
-         IJ.run(concatenatedFluoImgs, "Z Project...", "projection=[Max Intensity] all");
-         return (IJ.getImage());
-      }
-      return concatenatedFluoImgs.duplicate();
+      return concatenatedFluoImgs;
    }
 
    private static void findAbnormalCells(String mitoDir,

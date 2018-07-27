@@ -126,7 +126,7 @@ public class MaarsParameters {
    private static final String TOLERANCE = "TOLERANCE";
    public static final String FOCUS= "FOCUS";
    public static final String DIRECTION = "DIRECTION";
-   public static final String DEPS_DIR = IJ.getDirectory("plugins") + "MAARS_deps"+ File.separator;
+   public static final String DEPS_DIR = IJ.getDirectory("macros");
    public static final String DEFAULT_CONFIG_NAME = "maars_config.xml";
    private Document doc;
    private Element root;
@@ -134,7 +134,7 @@ public class MaarsParameters {
    /**
     * Constructor of Element need path to configuration file
     *
-    * @param defaultParametersStream input stream conaining xml file information
+    * @param defaultParametersStream input stream containing xml file information
     */
    public MaarsParameters(InputStream defaultParametersStream) {
 

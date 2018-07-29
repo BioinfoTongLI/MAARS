@@ -16,7 +16,6 @@ from pathlib import Path
 if __name__ == '__main__':
     args = Loader.set_attributes_from_cmd_line()
     root = Path(args.baseDir)
-
     params = Loader.load_parameters(root)
     analyser = MaarsAnalyzer(params, pos=args.pos, calibration=args.calibration, to_ch5=args.ch5)
     paths_to_features = analyser.get_paths_to_feature()
@@ -38,7 +37,7 @@ if __name__ == '__main__':
     df_sp_lens = analyser.get_elongations(path_to_mito_features)
 
     # plotting#################
-    Plotting.plot_elong(df_sp_lens)
+    Plotting.plot_elong(df_sp_lens, True, root / Constants.MITO_DIR)
 
     valid_cells = ComputeFeatures.cells_contain_kts(dict_id_poles, dict_id_kts)
     print(valid_cells)
@@ -62,6 +61,7 @@ if __name__ == '__main__':
     # for c in sp_geos.keys():
     #     sp_geos[c].plot()
     # plt.show()
+
     fluo_dots = pd.merge(pd.concat(dict_id_poles).unstack(level=0), pd.concat(dict_id_kts).unstack(level=0),
                          left_index=True, right_index=True)
     for col in fluo_dots:
@@ -86,5 +86,4 @@ if __name__ == '__main__':
     pd.concat([sp_geos, kt_geos], axis=1, join="outer", sort=True).\
         to_hdf(root / Constants.MITO_DIR / "geos.h5", key="geos")
     df_sp_lens.to_hdf(root / Constants.MITO_DIR / "elongations.h5", key="elongation")
-
     print("Done")

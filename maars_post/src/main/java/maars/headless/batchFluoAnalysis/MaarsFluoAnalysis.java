@@ -42,14 +42,17 @@ public class MaarsFluoAnalysis implements Runnable{
    private String posName_;
    private PrintStream curr_err = null;
    private PrintStream curr_out = null;
+   private String segAnaDir;
    public MaarsFluoAnalysis(ImagePlus[] impChs, String posName, MaarsParameters parameters, SOCVisualizer visualizer){
       processedChs_ = impChs;
       parameters_ = parameters;
       usingChannels = parameters_.getUsingChannels().split(",", -1);
       visualizer_ = visualizer;
       posName_ = posName;
+      segAnaDir = FileUtils.convertPath(parameters.getSavingPath()) + File.separator +
+            parameters.getSegmentationParameter(MaarsParameters.SEG_PREFIX) + Maars_Interface.SEGANALYSIS_SUFFIX;
       try {
-         PrintStream ps = new PrintStream(parameters_.getSavingPath() + File.separator + "FluoAnalysis.LOG");
+         PrintStream ps = new PrintStream(parameters.getSavingPath() + File.separator + "FluoAnalysis.LOG");
          curr_err = System.err;
          curr_out = System.out;
          System.setOut(ps);
@@ -61,10 +64,7 @@ public class MaarsFluoAnalysis implements Runnable{
    @Override
    public void run() {
       AtomicBoolean stop = new AtomicBoolean(false);
-
       DefaultSetOfCells soc;
-      String segAnaDir = FileUtils.convertPath(parameters_.getSavingPath()) + File.separator +
-            parameters_.getSegmentationParameter(MaarsParameters.SEG_PREFIX) + Maars_Interface.SEGANALYSIS_SUFFIX;
       soc = new DefaultSetOfCells(posName_);
       String currentPosPrefix = segAnaDir + posName_ + File.separator;
       String currentZipPath = currentPosPrefix + "ROI.zip";
@@ -104,11 +104,10 @@ public class MaarsFluoAnalysis implements Runnable{
                                        SOCVisualizer socVisualizer, CopyOnWriteArrayList<Map<String, Future>> tasksSet,
                                          AtomicBoolean stop) {
       ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-      int totalChannel = Integer.parseInt(processedChs[0].getStringProperty("SizeC"));
-      int totalFrame = Integer.parseInt(processedChs[0].getStringProperty("SizeT"));
-      for (int i = 1; i <= totalFrame; i++) {
+      
+      for (int i = 1; i <= processedChs[0].getDimensions()[4]; i++) {
          Map<String, Future> chAnalysisTasks = new HashMap<>();
-         for (int j = 0; j < totalChannel; j++) {
+         for (int j = 0; j < processedChs.length; j++) {
             String channel = usingChannels[j];
             IJ.log("Processing channel " + channel + "_" + i);
             ImagePlus slicedImg = duplicator.run(processedChs[j], i, i);

@@ -1,5 +1,6 @@
 package maars.headless.batchFluoAnalysis;
 
+import ij.IJ;
 import ij.ImagePlus;
 import loci.formats.FormatException;
 import maars.display.SOCVisualizer;
@@ -53,21 +54,29 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
          visualizer.setVisible(true);
          String processedImgFolder = fluoDir + "_processed_" + serieNbPos.get(serie);
          FileUtils.createFolder(processedImgFolder);
-
-         ImagePlus concatenatedFluoImgs = null;
-         try {
-            concatenatedFluoImgs = ImgUtils.lociImport(imgPath, serie);
-         } catch (IOException | FormatException e) {
-            e.printStackTrace();
+   
+         ImagePlus[] processedChs;
+         
+         if (FileUtils.exists(processedImgFolder)){
+            IJ.log("Using previously preprocessed images...");
+            processedChs = new ImagePlus[]{
+                  IJ.openImage(processedImgFolder + File.separator + usingChannels[0] + "_aligned.tif"),
+                  IJ.openImage(processedImgFolder + File.separator + usingChannels[1] + "_aligned.tif")
+            };
+         } else {
+            ImagePlus concatenatedFluoImgs = null;
+            try {
+               concatenatedFluoImgs = ImgUtils.lociImport(imgPath, serie);
+            } catch (IOException | FormatException e) {
+               e.printStackTrace();
+            }
+            assert concatenatedFluoImgs != null;
+            processedChs = ImgUtils.preprocessChs(concatenatedFluoImgs, usingChannels,
+                  processedImgFolder, true, true,
+                  Double.parseDouble(parameter.getFluoParameter(MaarsParameters.TIME_INTERVAL)) / 1000);
          }
-         assert concatenatedFluoImgs != null;
 
-         ImagePlus[] processedChs = ImgUtils.preprocessChs(concatenatedFluoImgs, usingChannels,
-                 processedImgFolder, true, true,
-                 Double.parseDouble(parameter.getFluoParameter(MaarsParameters.TIME_INTERVAL)) / 1000);
-
-         Thread th = new Thread(
-                 new MaarsFluoAnalysis(processedChs, serieNbPos.get(serie),
+         Thread th = new Thread(new MaarsFluoAnalysis(processedChs, serieNbPos.get(serie),
                  parameter, visualizer));
          th.start();
          try {

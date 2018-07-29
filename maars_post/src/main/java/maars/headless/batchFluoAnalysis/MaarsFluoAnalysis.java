@@ -33,128 +33,85 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MaarsFluoAnalysis implements Runnable{
    public static final String MITODIRNAME = "Mitosis";
-   private static String FLUOIMGPATH = null;
    private static Logger logger = LoggerFactory.getLogger(MaarsFluoAnalysis.class);
-
-
-   private Map<Integer, String> serieNbPos;
    private MaarsParameters parameters_;
-   private SOCVisualizer visualizer;
    private String[] usingChannels;
-   private String fluoDir;
-   private Duplicator duplicator;
-   public MaarsFluoAnalysis(MaarsParameters parameters, String suffix){
-      fluoDir = FileUtils.convertPath(parameters.getSavingPath()) + File.separator +
-            parameters.getFluoParameter(MaarsParameters.FLUO_PREFIX);
-      FLUOIMGPATH = Objects.requireNonNull(new File(fluoDir).listFiles(
-            (FilenameFilter) new WildcardFileFilter("*." + suffix)))[0].getAbsolutePath();
-      serieNbPos = ImgUtils.populateSeriesImgNames(FLUOIMGPATH);
+   private Duplicator duplicator = new Duplicator();
+   private SOCVisualizer visualizer_;
+   private ImagePlus[] processedChs_;
+   private String posName_;
+   private PrintStream curr_err = null;
+   private PrintStream curr_out = null;
+   public MaarsFluoAnalysis(ImagePlus[] impChs, String posName, MaarsParameters parameters, SOCVisualizer visualizer){
+      processedChs_ = impChs;
       parameters_ = parameters;
       usingChannels = parameters_.getUsingChannels().split(",", -1);
-      visualizer = new SOCVisualizer(usingChannels);
-      visualizer.setVisible(true);
-      duplicator = new Duplicator();
+      visualizer_ = visualizer;
+      posName_ = posName;
+      try {
+         PrintStream ps = new PrintStream(parameters_.getSavingPath() + File.separator + "FluoAnalysis.LOG");
+         curr_err = System.err;
+         curr_out = System.out;
+         System.setOut(ps);
+         System.setErr(ps);
+      } catch (FileNotFoundException e) {
+         IOUtils.printErrorToIJLog(e);
+      }
    }
    @Override
    public void run() {
       AtomicBoolean stop = new AtomicBoolean(false);
-      PrintStream curr_err = null;
-      PrintStream curr_out = null;
+
       DefaultSetOfCells soc;
       String segAnaDir = FileUtils.convertPath(parameters_.getSavingPath()) + File.separator +
             parameters_.getSegmentationParameter(MaarsParameters.SEG_PREFIX) + Maars_Interface.SEGANALYSIS_SUFFIX;
-      for (int serie : serieNbPos.keySet()) {
-         String posName = serieNbPos.get(serie);
-         ImagePlus[] processStack = null;
-         soc = new DefaultSetOfCells(posName);
-         String currentPosPrefix = segAnaDir + posName + File.separator;
-         String currentZipPath = currentPosPrefix + "ROI.zip";
-         if (FileUtils.exists(currentZipPath)) {
-            // from Roi.zip initialize a set of cell
-            soc.loadCells(currentZipPath);
-            IJ.open(currentPosPrefix + "Results.csv");
-            ResultsTable rt = ResultsTable.getResultsTable();
-            ResultsTable.getResultsWindow().close(false);
-            soc.addRoiMeasurementIntoCells(rt);
-            // ----------------start acquisition and analysis --------//
-            try {
-               PrintStream ps = new PrintStream(parameters_.getSavingPath() + File.separator + "FluoAnalysis.LOG");
-               curr_err = System.err;
-               curr_out = System.out;
-               System.setOut(ps);
-               System.setErr(ps);
-            } catch (FileNotFoundException e) {
-               IOUtils.printErrorToIJLog(e);
-            }
-            CopyOnWriteArrayList<Map<String, Future>> tasksSet = new CopyOnWriteArrayList<>();
-            try {
-               processStack = processStackedImg(FLUOIMGPATH, serie,
-                           parameters_, soc, visualizer, tasksSet, true, true, stop);
-            } catch (IOException | FormatException e) {
-               e.printStackTrace();
-            }
-            processStack[0].getCalibration().frameInterval =
-                  Double.parseDouble(parameters_.getFluoParameter(MaarsParameters.TIME_INTERVAL)) / 1000;
-            Maars_Interface.waitAllTaskToFinish(tasksSet);
-            if (!stop.get() && soc.size() != 0) {
-               long startWriting = System.currentTimeMillis();
-               ArrayList<String> arrayChannels = new ArrayList<>();
-               Collections.addAll(arrayChannels, parameters_.getUsingChannels().split(",", -1));
-               FileUtils.createFolder(parameters_.getSavingPath() + File.separator + parameters_.getFluoParameter(MaarsParameters.FLUO_PREFIX)
-                     +Maars_Interface.FLUOANALYSIS_SUFFIX);
-               IOUtils.saveAll(soc, processStack, parameters_.getSavingPath() + File.separator, parameters_.useDynamic(),
-                     arrayChannels, posName, parameters_.getFluoParameter(MaarsParameters.FLUO_PREFIX));
-               IJ.log("It took " + (double) (System.currentTimeMillis() - startWriting) / 1000
-                     + " sec for writing results");
-               analyzeMitosisDynamic(soc, parameters_, processStack[0].getCalibration().pixelWidth);
-            }
+      soc = new DefaultSetOfCells(posName_);
+      String currentPosPrefix = segAnaDir + posName_ + File.separator;
+      String currentZipPath = currentPosPrefix + "ROI.zip";
+      if (FileUtils.exists(currentZipPath)) {
+         // from Roi.zip initialize a set of cell
+         soc.loadCells(currentZipPath);
+         IJ.open(currentPosPrefix + "Results.csv");
+         ResultsTable rt = ResultsTable.getResultsTable();
+         ResultsTable.getResultsWindow().close(false);
+         soc.addRoiMeasurementIntoCells(rt);
+         // ----------------start acquisition and analysis --------//
+
+         CopyOnWriteArrayList<Map<String, Future>> tasksSet = new CopyOnWriteArrayList<>();
+         processStackedImg(processedChs_, parameters_, soc, visualizer_,
+                 tasksSet, stop);
+         Maars_Interface.waitAllTaskToFinish(tasksSet);
+         if (!stop.get() && soc.size() != 0) {
+            long startWriting = System.currentTimeMillis();
+            ArrayList<String> arrayChannels = new ArrayList<>();
+            Collections.addAll(arrayChannels, usingChannels);
+            FileUtils.createFolder(parameters_.getSavingPath() + File.separator + parameters_.getFluoParameter(MaarsParameters.FLUO_PREFIX)
+                  +Maars_Interface.FLUOANALYSIS_SUFFIX);
+            IOUtils.saveAll(soc, processedChs_, parameters_.getSavingPath() + File.separator, parameters_.useDynamic(),
+                  arrayChannels, posName_, parameters_.getFluoParameter(MaarsParameters.FLUO_PREFIX));
+            IJ.log("It took " + (double) (System.currentTimeMillis() - startWriting) / 1000
+                  + " sec for writing results");
+            analyzeMitosisDynamic(soc, parameters_, processedChs_[0].getCalibration().pixelWidth);
          }
-         visualizer.clear();
-         visualizer.setVisible(true);
-         soc.reset();
-         System.gc();
+      soc.reset();
+      System.gc();
       }
       System.setErr(curr_err);
       System.setOut(curr_out);
    }
 
-   private ImagePlus[] processStackedImg(String imgPath, int serie, MaarsParameters parameters, DefaultSetOfCells soc,
+   private void processStackedImg(ImagePlus[] processedChs, MaarsParameters parameters, DefaultSetOfCells soc,
                                        SOCVisualizer socVisualizer, CopyOnWriteArrayList<Map<String, Future>> tasksSet,
-                                       boolean gaussian_blur, boolean align, AtomicBoolean stop) throws IOException, FormatException {
-      ImagePlus concatenatedFluoImgs = ImgUtils.lociImport(imgPath, serie);
-
-      int totalChannel = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeC"));
-      int totalFrame = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeT"));
-//      int totalSlice = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeZ"));
-
-      ImagePlus[] processedImps = null;
-      String processedImgFolder = fluoDir + "_processed_" + serieNbPos.get(serie);
-      if (gaussian_blur){
-         FileUtils.createFolder(processedImgFolder);
-         processedImps = ImgUtils.blurChannels(concatenatedFluoImgs);
-         for (int i = 0; i < totalChannel; i++) {
-            IJ.saveAsTiff(processedImps[i], processedImgFolder + File.separator + usingChannels[i]
-                    +"_denoised");
-         }
-      }
-      concatenatedFluoImgs.close();
-      assert processedImps != null;
-      if (align){
-         FileUtils.createFolder(processedImgFolder);
-         processedImps = ImgUtils.alignChannels(processedImps, processedImgFolder, usingChannels);
-         for (int i = 0; i < totalChannel; i++) {
-            IJ.saveAsTiff(processedImps[i], processedImgFolder + File.separator + usingChannels[i] + "_aligned");
-         }
-      }
-      System.gc();
-      assert processedImps != null;
+                                         AtomicBoolean stop) {
       ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+      int totalChannel = Integer.parseInt(processedChs[0].getStringProperty("SizeC"));
+      int totalFrame = Integer.parseInt(processedChs[0].getStringProperty("SizeT"));
       for (int i = 1; i <= totalFrame; i++) {
          Map<String, Future> chAnalysisTasks = new HashMap<>();
          for (int j = 0; j < totalChannel; j++) {
             String channel = usingChannels[j];
             IJ.log("Processing channel " + channel + "_" + i);
-            ImagePlus slicedImg = duplicator.run(processedImps[j], i, i);
+            ImagePlus slicedImg = duplicator.run(processedChs[j], i, i);
             Future future = es.submit(new FluoAnalyzer(slicedImg, slicedImg.getCalibration(),
                   soc, channel, Integer.parseInt(parameters.getChMaxNbSpot(channel)),
                   Double.parseDouble(parameters.getChSpotRaius(channel)),
@@ -168,7 +125,6 @@ public class MaarsFluoAnalysis implements Runnable{
          }
       }
       es.shutdown();
-      return processedImps;
    }
 
    private static void findAbnormalCells(String mitoDir,

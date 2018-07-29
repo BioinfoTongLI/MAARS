@@ -418,4 +418,30 @@ public class ImgUtils {
       return blurredChannels;
    }
 
+   public static ImagePlus[] preprocessChs(ImagePlus concatenatedFluoImgs, String[] usingChannels,
+                                           String processedImgFolder, boolean gaussian_blur, boolean align,
+                                           double interval){
+      int totalChannel = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeC"));
+
+      ImagePlus[] processedChs = null;
+      if (gaussian_blur) {
+         processedChs = ImgUtils.blurChannels(concatenatedFluoImgs);
+         for (int i = 0; i < totalChannel; i++) {
+            processedChs[i].getCalibration().frameInterval = interval;
+            IJ.saveAsTiff(processedChs[i], processedImgFolder + File.separator + usingChannels[i]
+                    + "_denoised");
+         }
+      }
+      concatenatedFluoImgs.close();
+      assert processedChs != null;
+      if (align) {
+         processedChs = ImgUtils.alignChannels(processedChs, processedImgFolder, usingChannels);
+         for (int i = 0; i < totalChannel; i++) {
+            processedChs[i].getCalibration().frameInterval = interval;
+            IJ.saveAsTiff(processedChs[i], processedImgFolder + File.separator + usingChannels[i] + "_aligned");
+         }
+      }
+      System.gc();
+      return processedChs;
+   }
 }

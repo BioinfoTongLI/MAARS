@@ -56,12 +56,14 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
          FileUtils.createFolder(processedImgFolder);
    
          ImagePlus[] processedChs;
-         
-         if (FileUtils.exists(processedImgFolder)){
+         String firstChImgPath = processedImgFolder + File.separator + usingChannels[0] + "_aligned.tif";
+         String secChImgPath = processedImgFolder + File.separator + usingChannels[0] + "_aligned.tif";
+         if (FileUtils.exists(firstChImgPath) &&
+                 FileUtils.exists(secChImgPath)) {
             IJ.log("Using previously preprocessed images...");
             processedChs = new ImagePlus[]{
-                  IJ.openImage(processedImgFolder + File.separator + usingChannels[0] + "_aligned.tif"),
-                  IJ.openImage(processedImgFolder + File.separator + usingChannels[1] + "_aligned.tif")
+                  IJ.openImage(firstChImgPath),
+                  IJ.openImage(secChImgPath)
             };
          } else {
             ImagePlus concatenatedFluoImgs = null;

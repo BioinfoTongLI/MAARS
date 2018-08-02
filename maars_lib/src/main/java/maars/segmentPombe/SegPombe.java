@@ -69,8 +69,6 @@ public class SegPombe {
    public static final String BINARY = "Binary";
    public static final String INTEGRATED = "Integrated";
    public static final String FOCUS = "Focus";
-   public static final String RESULTS = "Results";
-   public static final String ROI = "ROI";
    public static final String SEGLOG = "Segmentation.log";
 
    /**
@@ -226,22 +224,27 @@ public class SegPombe {
          this.binImage.show();
          WaitForUserDialog waitForUserDialog = new WaitForUserDialog("Optimize (or not) segmentation of "+
                imageToAnalyze.getShortTitle()+ ", and click ok.");
+         JPanel butPanel = new JPanel();
+         JButton fillHolesButton = new JButton("Fill holes");
+         fillHolesButton.addActionListener(actionEvent -> {
+            IJ.run("Fill Holes");
+         });
          JButton adjWaterButton = new JButton("Adjustable Watershed");
          adjWaterButton.addActionListener(actionEvent -> {
-            //IJ.run(this.binImage, "Adjustable_Watershed.java","");
-            IJ.run(this.binImage, "Compile and Run...",
-                  "compile="+IJ.getDirectory("plugins") +"Adjustable_Watershed.java");
+            IJ.run(this.binImage, "Adjustable Watershed","tolerance=8");
+//            IJ.run(this.binImage, "Compile and Run...",
+//                  "compile="+IJ.getDirectory("plugins") +"Adjustable_Watershed.java");
          });
+         butPanel.add(fillHolesButton);
+         butPanel.add(adjWaterButton);
          waitForUserDialog.setAlwaysOnTop(false);
          waitForUserDialog.setLayout(new BorderLayout());
-         waitForUserDialog.add(adjWaterButton, BorderLayout.SOUTH);
+         waitForUserDialog.add(butPanel, BorderLayout.SOUTH);
          waitForUserDialog.setMinimumSize(new Dimension(200, 130));
          waitForUserDialog.show();
          this.binImage.hide();
       } else {
          System.out.println("no improvement on binary");
-//         IJ.run(this.binImage, IJ.getDirectory("plugins") +"Adjustable Watershed",
-//               "tolerance=" + tolerance);
       }
    }
 
@@ -276,7 +279,7 @@ public class SegPombe {
 
       particleAnalyzer.analyze(binImage);
       System.out.println("Done");
-      Integer nbRoi = roiManager.getCount();
+      int nbRoi = roiManager.getCount();
       ArrayList<CellFilter> filters = new ArrayList<>();
       if (filtrateWithMeanGrayValue) {
          filters.add(new CellFilter(ResultsTable.MEAN, meanGreyValueThreshold, Double.MAX_VALUE));
@@ -284,9 +287,11 @@ public class SegPombe {
       if (filterAbnormalShape) {
          filters.add(new CellFilter(ResultsTable.SOLIDITY, solidityThreshold, Double.MAX_VALUE));
       }
-      if (!nbRoi.equals(0)) {
+      if (nbRoi > 0) {
          CellFilterFacotory facotory = new CellFilterFacotory(resultTable, imgCorrTemp);
          facotory.filterAll(filters);
+      }else{
+         IJ.error("No ROI detected/kept after filtering.");
       }
    }
 
@@ -365,9 +370,5 @@ public class SegPombe {
       ps.close();
       System.setOut(curr_out);
       System.setErr(curr_err);
-   }
-
-   public FloatProcessor getintegratedProcessor() {
-      return integratedProcessor;
    }
 }

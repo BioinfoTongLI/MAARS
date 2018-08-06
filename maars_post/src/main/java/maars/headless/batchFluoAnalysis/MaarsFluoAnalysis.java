@@ -2,6 +2,7 @@ package maars.headless.batchFluoAnalysis;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.plugin.Duplicator;
 
@@ -88,7 +89,7 @@ public class MaarsFluoAnalysis implements Runnable{
                   arrayChannels, posName_, parameters_.getFluoParameter(MaarsParameters.FLUO_PREFIX));
             IJ.log("It took " + (double) (System.currentTimeMillis() - startWriting) / 1000
                   + " sec for writing results");
-            analyzeMitosisDynamic(soc, parameters_, processedChs_[0].getCalibration().pixelWidth);
+            analyzeMitosisDynamic(soc, parameters_, processedChs_[0].getCalibration());
          }
       soc.reset();
       System.gc();
@@ -163,7 +164,7 @@ public class MaarsFluoAnalysis implements Runnable{
       IJ.log("lagging detection finished");
    }
 
-   public static void analyzeMitosisDynamic(DefaultSetOfCells soc, MaarsParameters parameters, double calib) {
+   public static void analyzeMitosisDynamic(DefaultSetOfCells soc, MaarsParameters parameters, Calibration calib) {
       IJ.log("Start python analysis");
       String pos = soc.getPosLabel();
       String pathToRoot = parameters.getSavingPath() + File.separator;
@@ -172,7 +173,8 @@ public class MaarsFluoAnalysis implements Runnable{
       FileUtils.createFolder(mitoDir);
 
       String[] mitosis_cmd = new String[]{PythonPipeline.getPythonDefaultPathInConda(), MaarsParameters.DEPS_DIR +
-            PythonPipeline.ANALYSING_SCRIPT_NAME, pathToRoot, Double.toString(calib), pos};
+            PythonPipeline.ANALYSING_SCRIPT_NAME, pathToRoot, Double.toString(calib.pixelWidth), pos,
+              Double.toString(calib.frameInterval)};
       ArrayList<String> cmds = new ArrayList<>();
       cmds.add(String.join(" ", mitosis_cmd));
       String bashPath = mitoDir + "pythonAnalysis.sh";

@@ -389,32 +389,29 @@ public class ImgUtils {
       return projectedImps;
    }
 
-   public static ImagePlus[] blurChannels(ImagePlus imp){
-      ImagePlus[] blurredChannels = ChannelSplitter.split(imp);
+   public static ImagePlus[] blurChannels(ImagePlus[] chs){
       IJ.log("Denoising the image with 3D-blurring...");
-      for (ImagePlus im : blurredChannels){
+      for (ImagePlus im : chs){
          IJ.run(im, "Gaussian Blur 3D...", "x=1.2 y=1.2 z=2.4");
       }
-      return blurredChannels;
+      return chs;
    }
 
    public static ImagePlus[] preprocessChs(ImagePlus concatenatedFluoImgs, String[] usingChannels,
                                            String processedImgFolder, boolean gaussian_blur, boolean align){
       int totalChannel = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeC"));
-      System.out.println(concatenatedFluoImgs.getCalibration());
       double interval = concatenatedFluoImgs.getCalibration().frameInterval;
 
-      ImagePlus[] processedChs = null;
+      ImagePlus[] processedChs = ChannelSplitter.split(concatenatedFluoImgs);
+      concatenatedFluoImgs.close();
       if (gaussian_blur) {
-         processedChs = ImgUtils.blurChannels(concatenatedFluoImgs);
+         processedChs = ImgUtils.blurChannels(processedChs);
          for (int i = 0; i < totalChannel; i++) {
             processedChs[i].getCalibration().frameInterval = interval;
             IJ.saveAsTiff(processedChs[i], processedImgFolder + File.separator + usingChannels[i]
                     + "_denoised");
          }
       }
-      concatenatedFluoImgs.close();
-      assert processedChs != null;
       if (align) {
          processedChs = ImgUtils.alignChannels(processedChs, processedImgFolder, usingChannels);
          for (int i = 0; i < totalChannel; i++) {

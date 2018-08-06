@@ -5,7 +5,6 @@ import ij.ImagePlus;
 import ij.measure.ResultsTable;
 import ij.plugin.Duplicator;
 
-import loci.formats.FormatException;
 import maars.agents.Cell;
 import maars.agents.DefaultSetOfCells;
 import maars.cellAnalysis.FluoAnalyzer;
@@ -15,8 +14,6 @@ import maars.io.IOUtils;
 import maars.main.MaarsParameters;
 import maars.main.Maars_Interface;
 import maars.utils.FileUtils;
-import maars.utils.ImgUtils;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,8 +75,8 @@ public class MaarsFluoAnalysis implements Runnable{
          // ----------------start acquisition and analysis --------//
 
          CopyOnWriteArrayList<Map<String, Future>> tasksSet = new CopyOnWriteArrayList<>();
-         processStackedImg(processedChs_, parameters_, soc, visualizer_,
-                 tasksSet, stop);
+         // main analysis step
+         processStackedImg(processedChs_, parameters_, soc, visualizer_, tasksSet, stop);
          Maars_Interface.waitAllTaskToFinish(tasksSet);
          if (!stop.get() && soc.size() != 0) {
             long startWriting = System.currentTimeMillis();
@@ -105,16 +102,16 @@ public class MaarsFluoAnalysis implements Runnable{
                                          AtomicBoolean stop) {
       ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
       
-      for (int i = 1; i <= processedChs[0].getDimensions()[4]; i++) {
+      for (int frame = 1; frame <= processedChs[0].getDimensions()[4]; frame++) {
          Map<String, Future> chAnalysisTasks = new HashMap<>();
          for (int j = 0; j < processedChs.length; j++) {
             String channel = usingChannels[j];
-            IJ.log("Processing channel " + channel + "_" + i);
-            ImagePlus slicedImg = duplicator.run(processedChs[j], i, i);
+            IJ.log("Processing channel " + channel + "_" + frame);
+            ImagePlus slicedImg = duplicator.run(processedChs[j], frame, frame);
             Future future = es.submit(new FluoAnalyzer(slicedImg, slicedImg.getCalibration(),
                   soc, channel, Integer.parseInt(parameters.getChMaxNbSpot(channel)),
                   Double.parseDouble(parameters.getChSpotRaius(channel)),
-                  Double.parseDouble(parameters.getChQuality(channel)), i, socVisualizer,
+                  Double.parseDouble(parameters.getChQuality(channel)), frame, socVisualizer,
                   parameters.useDynamic()));
             chAnalysisTasks.put(channel, future);
          }
@@ -162,13 +159,8 @@ public class MaarsFluoAnalysis implements Runnable{
             out.println(unalignKtMessage);
          }
       }
-      assert out != null;
       out.close();
       IJ.log("lagging detection finished");
-   }
-
-   static HashMap getMitoticCellNbs(String mitoDir) {
-      return FileUtils.readTable(mitoDir + File.separator + "slopeChanges.csv");
    }
 
    public static void analyzeMitosisDynamic(DefaultSetOfCells soc, MaarsParameters parameters, double calib) {

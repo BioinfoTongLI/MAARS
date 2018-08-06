@@ -35,7 +35,7 @@ import java.io.*;
  *    +-----> FRAME_NUMBER
  *    +-----> RANGE_SIZE_FOR_MOVIE
  *    +-----> STEP
- *    +-----> SIGMA
+ *    +-----> CELL_THICKNESS
  *    +-----> MINIMUM_CELL_AREA
  *    +-----> MEAN_GREY_VALUE
  *    +-----> SOLIDITY
@@ -48,20 +48,10 @@ import java.io.*;
  * FLUO_ANALYSIS_PARAMETERS
  *    |
  *    +-----> PATH_TO_FLUO_ACQ_SETTING
- *    +-----> FRAME_NUMBER
- *    +-----> RANGE_SIZE_FOR_MOVIE
- *    +-----> STEP
- *    +-----> SAVE_FLUORESCENT_MOVIES
  *    +-----> USING
  *    +-----> DYNAMIC
- *    +-----> TIME_LIMIT
- *    +-----> TIME_INTERVAL
  *    +-----> DO_ANALYSIS
  *    +-----> PROJECTED
- *    +-----> ANALYSIS_OPTIONS
- *    		|
- *    		+-----> DO_MITOSIS_RATIO
- *    		+----->
  *    
  * GENERAL_ACQUISITION_PARAMETERS
  *    |
@@ -87,7 +77,6 @@ import java.io.*;
  */
 public class MaarsParameters {
 
-   public static final String RANGE_SIZE_FOR_MOVIE = "RANGE_SIZE_FOR_MOVIE";
    public static final String STEP = "STEP";
    public static final String DYNAMIC = "DYNAMIC";
    public static final String PATH_TO_POSITION_LIST = "PATH_TO_POSITION_LIST";
@@ -97,8 +86,6 @@ public class MaarsParameters {
    public static final String MEAN_GREY_VALUE = "MEAN_GREY_VALUE";
    public static final String FILTER_SOLIDITY = "FILTER_SOLIDITY";
    public static final String SOLIDITY = "SOLIDITY";
-   public static final String TIME_INTERVAL = "TIME_INTERVAL";
-   public static final String TIME_LIMIT = "TIME_LIMIT";
    public static final String DO_ANALYSIS = "DO_ANALYSIS";
    public static final String CHANNEL = "CHANNEL";
    public static final String PROJECTED = "PROJECTED";
@@ -106,7 +93,7 @@ public class MaarsParameters {
    public static final String PATH_TO_FLUO_ACQ_SETTING = "PATH_TO_FLUO_ACQ_SETTING";
    public static final String SEG_PREFIX = "SEG_PREFIX";
    public static final String FLUO_PREFIX = "FLUO_PREFIX";
-   static final String SIGMA = "SIGMA";
+   static final String CELL_THICKNESS = "CELL_THICKNESS";
    static final String NEW_MAX_WIDTH_FOR_CHANGE_SCALE = "NEW_MAX_WIDTH_FOR_CHANGE_SCALE";
    static final String NEW_MAX_HEIGTH_FOR_CHANGE_SCALE = "NEW_MAX_HEIGTH_FOR_CHANGE_SCALE";
    private static final String SEGMENTATION_PARAMETERS = "SEGMENTATION_PARAMETERS";
@@ -122,8 +109,6 @@ public class MaarsParameters {
    private static final String GENERAL_ACQUISITION_PARAMETERS = "GENERAL_ACQUISITION_PARAMETERS";
    private static final String DEFAULT_CHANNEL_PARAMATERS = "DEFAULT_CHANNEL_PARAMATERS";
    private static final String SKIP = "SKIP";
-   private static final String BATCH_MODE = "BATCH_MODE";
-   private static final String TOLERANCE = "TOLERANCE";
    public static final String FOCUS= "FOCUS";
    public static final String DIRECTION = "DIRECTION";
    public static final String DEPS_DIR = IJ.getDirectory("macros");
@@ -186,18 +171,6 @@ public class MaarsParameters {
             }
          }
       }
-   }
-
-   public static int getTimePointsNb(MaarsParameters parameters) {
-      double timeLimit = Double.parseDouble(parameters.getFluoParameter(MaarsParameters.TIME_LIMIT)) * 60
-            * 1000;
-      double fluoTimeInterval = Double.parseDouble(parameters.getFluoParameter(MaarsParameters.TIME_INTERVAL));
-      return (int) (timeLimit / fluoTimeInterval);
-   }
-
-   public static int getSliceNb(MaarsParameters parameters) {
-      return (int) (Double.valueOf(parameters.getFluoParameter(MaarsParameters.RANGE_SIZE_FOR_MOVIE)) /
-            Double.valueOf(parameters.getFluoParameter(MaarsParameters.STEP)) + 1);
    }
 
    // Getter
@@ -377,25 +350,10 @@ public class MaarsParameters {
    }
 
    /**
-    * @return whether or not project z stack
-    */
-   public String getProjected() {
-      return root.getChild(FLUO_ANALYSIS_PARAMETERS).getChildText(PROJECTED);
-   }
-
-   /**
     * @param projected whether or not project z stack
     */
    public void setProjected(String projected) {
       root.getChild(FLUO_ANALYSIS_PARAMETERS).getChild(PROJECTED).setText(projected);
-   }
-
-   String getBatchMode() {
-      return root.getChild(GENERAL_ACQUISITION_PARAMETERS).getChildText(BATCH_MODE);
-   }
-
-   String getSegTolerance() {
-      return root.getChild(SEGMENTATION_PARAMETERS).getChildText(TOLERANCE);
    }
 
    /**
@@ -449,10 +407,6 @@ public class MaarsParameters {
     */
    public void setSegChannel(String segChannel) {
       root.getChild(SEGMENTATION_PARAMETERS).getChild(CHANNEL).setText(segChannel);
-   }
-
-   public void setBatchMode(Boolean batchMode) {
-      root.getChild(GENERAL_ACQUISITION_PARAMETERS).getChild(BATCH_MODE).setText(String.valueOf(batchMode));
    }
 
    /**

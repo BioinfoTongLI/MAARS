@@ -71,11 +71,11 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
                concatenatedFluoImgs = ImgUtils.lociImport(imgPath, serie);
             } catch (IOException | FormatException e) {
                e.printStackTrace();
+               IJ.error("Can not load fluo images...");
             }
             assert concatenatedFluoImgs != null;
             processedChs = ImgUtils.preprocessChs(concatenatedFluoImgs, usingChannels,
-                  processedImgFolder, true, true,
-                  Double.parseDouble(parameter.getFluoParameter(MaarsParameters.TIME_INTERVAL)) / 1000);
+                  processedImgFolder, true, true);
          }
 
          Thread th = new Thread(new MaarsFluoAnalysis(processedChs, serieNbPos.get(serie),
@@ -87,7 +87,6 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
             e.printStackTrace();
          }
          visualizer.clear();
-         visualizer.setVisible(true);
       }
    }
 }

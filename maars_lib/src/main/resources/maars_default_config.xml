@@ -4,12 +4,7 @@
         <FLUO_PREFIX>FLUO_1</FLUO_PREFIX>
         <DYNAMIC>true</DYNAMIC>
         <!-- the order is important !!!! -->
-        <USING>CFP,GFP</USING>
-        <RANGE_SIZE_FOR_MOVIE>1.2</RANGE_SIZE_FOR_MOVIE>
-        <SAVE_FLUORESCENT_MOVIES>true</SAVE_FLUORESCENT_MOVIES>
-        <STEP>0.3</STEP>
-        <TIME_INTERVAL>20000.</TIME_INTERVAL><!-- in millisecond-->
-        <TIME_LIMIT>30</TIME_LIMIT><!-- in minute-->
+        <USING>GFP,CFP</USING>
         <DO_ANALYSIS>true</DO_ANALYSIS>
         <PROJECTED>false</PROJECTED>
     </FLUO_ANALYSIS_PARAMETERS>
@@ -18,8 +13,8 @@
         <DEFAULT_CHANNEL_PARAMATERS>
             <CFP>
                 <MAXIMUM_NUMBER_OF_SPOT>2</MAXIMUM_NUMBER_OF_SPOT>
-                <SPOT_RADIUS>0.25</SPOT_RADIUS>
-                <QUALITY>12</QUALITY>
+                <SPOT_RADIUS>0.3</SPOT_RADIUS>
+                <QUALITY>2.5</QUALITY>
             </CFP>
             <DAPI>
                 <MAXIMUM_NUMBER_OF_SPOT>2</MAXIMUM_NUMBER_OF_SPOT>
@@ -28,8 +23,8 @@
             </DAPI>
             <GFP>
                 <MAXIMUM_NUMBER_OF_SPOT>6</MAXIMUM_NUMBER_OF_SPOT>
-                <SPOT_RADIUS>0.2</SPOT_RADIUS>
-                <QUALITY>10</QUALITY>
+                <SPOT_RADIUS>0.25</SPOT_RADIUS>
+                <QUALITY>3</QUALITY>
             </GFP>
             <TxRed>
                 <MAXIMUM_NUMBER_OF_SPOT>2</MAXIMUM_NUMBER_OF_SPOT>
@@ -53,18 +48,13 @@
             </Rhodamine>
         </DEFAULT_CHANNEL_PARAMATERS>
         <SAVING_PATH></SAVING_PATH>
-        <!-- not editable with GUI -->
-        <BATCH_MODE>false</BATCH_MODE>
     </GENERAL_ACQUISITION_PARAMETERS>
     <SEGMENTATION_PARAMETERS>
-        <!-- only useful in batch mode -->
-        <TOLERANCE>10</TOLERANCE>
         <SEG_PREFIX>BF_1</SEG_PREFIX>
-        <SIGMA>3.0</SIGMA>
         <DIRECTION>-1</DIRECTION>
         <FOCUS>17</FOCUS>
         <SKIP>false</SKIP>
-        <CELL_SIZE>3.0</CELL_SIZE>
+        <CELL_THICKNESS>3.0</CELL_THICKNESS>
         <CHANNEL>BF</CHANNEL>
         <FILTER_MEAN_GREY_VALUE>true</FILTER_MEAN_GREY_VALUE>
         <FILTER_SOLIDITY>true</FILTER_SOLIDITY>

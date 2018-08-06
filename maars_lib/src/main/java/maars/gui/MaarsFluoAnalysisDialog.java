@@ -18,9 +18,6 @@ import java.util.ArrayList;
  */
 public class MaarsFluoAnalysisDialog extends JDialog {
 
-   /**
-    *
-    */
    private static final long serialVersionUID = 1L;
    private JCheckBox doAnaChx_ = new JCheckBox("Do analysis?");
    private MaarsParameters parameters_;
@@ -42,10 +39,8 @@ public class MaarsFluoAnalysisDialog extends JDialog {
 
    private void createDialog(MaarsParameters parameters) {
       setUpDialog(new Dimension(300, 200));
-      int timePointsNb = MaarsParameters.getTimePointsNb(parameters);
-      int slicePerFrame = MaarsParameters.getSliceNb(parameters);
       int nbChannel = MaarsParameters.getChNb(parameters);
-      add(generateSummaryPanel(timePointsNb, slicePerFrame, nbChannel), BorderLayout.NORTH);
+      add(generateSummaryPanel(nbChannel), BorderLayout.NORTH);
       add(generateAnaParamPanel(parameters), BorderLayout.CENTER);
       add(generateButtonPanel(parameters), BorderLayout.SOUTH);
       pack();
@@ -222,7 +217,7 @@ public class MaarsFluoAnalysisDialog extends JDialog {
       return chbxPanel;
    }
 
-   private JPanel generateSummaryPanel(int timePointsNb, int slicePerFrame, int nbChannel) {
+   private JPanel generateSummaryPanel(int nbChannel) {
       JPanel summaryPanel = new JPanel();
       summaryPanel.setBackground(GuiUtils.bgColor);
       summaryPanel.setBorder(GuiUtils.addSecondaryTitle("Acquisition summary"));
@@ -230,9 +225,7 @@ public class MaarsFluoAnalysisDialog extends JDialog {
       JLabel summaryLabel = new JLabel();
       summaryLabel.setVerticalTextPosition(JLabel.CENTER);
       summaryLabel.setText(
-            "<html><body>Nb of time points: " + String.valueOf(timePointsNb) + lineSep +
-                  "Nb of slices: " + String.valueOf(slicePerFrame) + lineSep +
-                  "Nb of channels: " + String.valueOf(nbChannel) + lineSep);
+            "<html><body>Nb of channels: " + String.valueOf(nbChannel) + lineSep);
       summaryPanel.add(summaryLabel);
       return summaryPanel;
    }

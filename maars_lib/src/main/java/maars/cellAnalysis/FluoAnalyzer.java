@@ -6,7 +6,6 @@ import fiji.plugin.trackmate.SpotCollection;
 import ij.ImagePlus;
 import ij.gui.Roi;
 import ij.measure.Calibration;
-import ij.measure.Measurements;
 import ij.measure.ResultsTable;
 import maars.agents.Cell;
 import maars.agents.DefaultSetOfCells;
@@ -76,7 +75,7 @@ public class FluoAnalyzer implements Runnable {
    @Override
    public void run() {
       if (fluoImage.getCalibration().getUnit().equals("cm")) {
-         fluoImage = ImgUtils.unitCmToMicron(fluoImage);
+         ImgUtils.unitCmToMicron(fluoImage);
       }
       MaarsTrackmate trackmate = new MaarsTrackmate(fluoImage, radius, quality);
       this.model = trackmate.doDetection();

@@ -21,8 +21,6 @@ public class MaarsSegmentation implements Runnable {
    private ImagePlus img_;
    private String posNb_;
    private SegPombeParameters segPombeParam_;
-   private Boolean batchMode = false;
-   private Double tolerance = Double.MAX_VALUE;
 
    /**
     * * Constructor :
@@ -34,8 +32,6 @@ public class MaarsSegmentation implements Runnable {
    public MaarsSegmentation(MaarsParameters parameters, ImagePlus img, String posNb) {
       img_ = img;
       posNb_ = posNb;
-      batchMode = Boolean.valueOf(parameters.getBatchMode());
-      tolerance = Double.valueOf(parameters.getSegTolerance());
       segPombeParam_ = segParameterWrapper(parameters);
    }
 
@@ -56,7 +52,7 @@ public class MaarsSegmentation implements Runnable {
       IJ.log("Begin segmentation...");
       SegPombe segPombe = new SegPombe(segPombeParam_);
       segPombe.createIntegratedImage();
-      segPombe.convertIntegratedToBinaryImage(batchMode,tolerance);
+      segPombe.convertIntegratedToBinaryImage();
       segPombe.analyseAndFilterParticles();
       segPombe.showAndSaveResultsAndCleanUp();
       IJ.log("Segmentation done");
@@ -95,7 +91,7 @@ public class MaarsSegmentation implements Runnable {
             segPombeParam);
 
       segPombeParam.setSigma(
-            (int) Math.round(Double.parseDouble(parameters.getSegmentationParameter(MaarsParameters.SIGMA))
+            (int) Math.round(Double.parseDouble(parameters.getSegmentationParameter(MaarsParameters.CELL_THICKNESS))
                   / Double.parseDouble(parameters.getSegmentationParameter(MaarsParameters.STEP))));
 
       segPombeParam.setMinParticleSize((int) Math

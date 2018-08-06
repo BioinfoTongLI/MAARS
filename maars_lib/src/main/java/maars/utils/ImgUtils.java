@@ -30,36 +30,16 @@ import java.util.regex.Pattern;
  * @version Nov 25, 2015
  */
 public class ImgUtils {
-   /**
-    * Do projection by using Max method to create a projection
-    *
-    * @param cal calibration
-    * @param img image to be projected
-    * @return projected image
-    */
-   public static ImagePlus zProject(ImagePlus img, Calibration cal) {
-      ZProjector projector = new ZProjector();
-      FileInfo info = img.getFileInfo();
-      projector.setMethod(ZProjector.MAX_METHOD);
-      projector.setImage(img);
-      projector.doHyperStackProjection(true);
-      ImagePlus projected = projector.getProjection();
-      projected.setCalibration(cal);
-      projected.setFileInfo(info);
-      return projected;
-   }
 
    /**
     * change unit of "cm" to "micron"
     *
     * @param img img with calibration to change
-    * @return calibration changed image
     */
-   public static ImagePlus unitCmToMicron(ImagePlus img) {
+   public static void unitCmToMicron(ImagePlus img) {
       img.getCalibration().setUnit("micron");
       img.getCalibration().pixelWidth = img.getCalibration().pixelWidth * 10000;
       img.getCalibration().pixelHeight = img.getCalibration().pixelHeight * 10000;
-      return img;
    }
 
    /**
@@ -411,7 +391,7 @@ public class ImgUtils {
 
    public static ImagePlus[] blurChannels(ImagePlus imp){
       ImagePlus[] blurredChannels = ChannelSplitter.split(imp);
-      IJ.log("Denoising the image with z-blurring...");
+      IJ.log("Denoising the image with 3D-blurring...");
       for (ImagePlus im : blurredChannels){
          IJ.run(im, "Gaussian Blur 3D...", "x=1.2 y=1.2 z=2.4");
       }
@@ -419,9 +399,10 @@ public class ImgUtils {
    }
 
    public static ImagePlus[] preprocessChs(ImagePlus concatenatedFluoImgs, String[] usingChannels,
-                                           String processedImgFolder, boolean gaussian_blur, boolean align,
-                                           double interval){
+                                           String processedImgFolder, boolean gaussian_blur, boolean align){
       int totalChannel = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeC"));
+      System.out.println(concatenatedFluoImgs.getCalibration());
+      double interval = concatenatedFluoImgs.getCalibration().frameInterval;
 
       ImagePlus[] processedChs = null;
       if (gaussian_blur) {

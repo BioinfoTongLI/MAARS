@@ -193,9 +193,8 @@ public class SegPombe {
     * This method set a threshold with Ostu method on the Integrated image and
     * convert it into Binary Image
     *
-    * @param batchMode batch mode for optimization of segmentation
     */
-   public void convertIntegratedToBinaryImage(Boolean batchMode, Double tolerance) {
+   public void convertIntegratedToBinaryImage() {
 
       System.out.println("Convert Integrated image to binary image");
 
@@ -220,32 +219,29 @@ public class SegPombe {
          this.binImage.setCalibration(imageToAnalyze.getCalibration());
       }
 
-      if (!batchMode || tolerance == Double.MAX_VALUE) {
-         this.binImage.show();
-         WaitForUserDialog waitForUserDialog = new WaitForUserDialog("Optimize (or not) segmentation of "+
-               imageToAnalyze.getShortTitle()+ ", and click ok.");
-         JPanel butPanel = new JPanel();
-         JButton fillHolesButton = new JButton("Fill holes");
-         fillHolesButton.addActionListener(actionEvent -> {
-            IJ.run("Fill Holes");
-         });
-         JButton adjWaterButton = new JButton("Adjustable Watershed");
-         adjWaterButton.addActionListener(actionEvent -> {
-            IJ.run(this.binImage, "Adjustable Watershed","tolerance=8");
-//            IJ.run(this.binImage, "Compile and Run...",
-//                  "compile="+IJ.getDirectory("plugins") +"Adjustable_Watershed.java");
-         });
-         butPanel.add(fillHolesButton);
-         butPanel.add(adjWaterButton);
-         waitForUserDialog.setAlwaysOnTop(false);
-         waitForUserDialog.setLayout(new BorderLayout());
-         waitForUserDialog.add(butPanel, BorderLayout.SOUTH);
-         waitForUserDialog.setMinimumSize(new Dimension(200, 130));
-         waitForUserDialog.show();
-         this.binImage.hide();
-      } else {
-         System.out.println("no improvement on binary");
-      }
+
+      this.binImage.show();
+      WaitForUserDialog waitForUserDialog = new WaitForUserDialog("Optimize (or not) segmentation of "+
+            imageToAnalyze.getShortTitle()+ ", and click ok.");
+      JPanel butPanel = new JPanel();
+      JButton fillHolesButton = new JButton("Fill holes");
+      fillHolesButton.addActionListener(actionEvent -> {
+         IJ.run("Fill Holes");
+      });
+      JButton adjWaterButton = new JButton("Adjustable Watershed");
+      adjWaterButton.addActionListener(actionEvent -> {
+         IJ.run(this.binImage, "Adjustable Watershed","tolerance=8");
+//         IJ.run(this.binImage, "Compile and Run...",
+//               "compile="+IJ.getDirectory("plugins") +"Adjustable_Watershed.java");
+      });
+      butPanel.add(fillHolesButton);
+      butPanel.add(adjWaterButton);
+      waitForUserDialog.setAlwaysOnTop(false);
+      waitForUserDialog.setLayout(new BorderLayout());
+      waitForUserDialog.add(butPanel, BorderLayout.SOUTH);
+      waitForUserDialog.setMinimumSize(new Dimension(200, 130));
+      waitForUserDialog.show();
+      this.binImage.hide();
    }
 
    /**

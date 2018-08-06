@@ -10,6 +10,7 @@ import maars.agents.Cell;
 import maars.agents.DefaultSetOfCells;
 import maars.cellAnalysis.FluoAnalyzer;
 import maars.cellAnalysis.PythonPipeline;
+import maars.cellAnalysis.TrackmateAnalyzer;
 import maars.display.SOCVisualizer;
 import maars.io.IOUtils;
 import maars.main.MaarsParameters;
@@ -41,6 +42,7 @@ public class MaarsFluoAnalysis implements Runnable{
    private PrintStream curr_err = null;
    private PrintStream curr_out = null;
    private String segAnaDir;
+   private int method = 0;
    public MaarsFluoAnalysis(ImagePlus[] impChs, String posName, MaarsParameters parameters, SOCVisualizer visualizer){
       processedChs_ = impChs;
       parameters_ = parameters;
@@ -77,7 +79,13 @@ public class MaarsFluoAnalysis implements Runnable{
 
          CopyOnWriteArrayList<Map<String, Future>> tasksSet = new CopyOnWriteArrayList<>();
          // main analysis step
-         processStackedImg(processedChs_, parameters_, soc, visualizer_, tasksSet, stop);
+         switch (method){
+            case 0:
+               processStackedImg(processedChs_, parameters_, soc, tasksSet, stop);
+               break;
+            default:
+               processStackedImg(processedChs_, parameters_, soc, visualizer_, tasksSet, stop);
+         }
          Maars_Interface.waitAllTaskToFinish(tasksSet);
          if (!stop.get() && soc.size() != 0) {
             long startWriting = System.currentTimeMillis();
@@ -98,11 +106,30 @@ public class MaarsFluoAnalysis implements Runnable{
       System.setOut(curr_out);
    }
 
+
+   private void processStackedImg(ImagePlus[] processedChs, MaarsParameters parameters, DefaultSetOfCells soc,
+                                  CopyOnWriteArrayList<Map<String, Future>> tasksSet,
+                                  AtomicBoolean stop) {
+      ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+      Map<String, Future> chAnalysisTasks = new HashMap<>();
+      for (int j = 0; j < processedChs.length; j++) {
+         String channel = usingChannels[j];
+         IJ.log("Processing channel " + channel );
+         Future future = es.submit(new TrackmateAnalyzer(processedChs[j],
+                 soc, channel, Integer.parseInt(parameters.getChMaxNbSpot(channel)),
+                 Double.parseDouble(parameters.getChSpotRaius(channel)),
+                 Double.parseDouble(parameters.getChQuality(channel))));
+         chAnalysisTasks.put(channel, future);
+      }
+      tasksSet.add(chAnalysisTasks);
+   }
+
+
    private void processStackedImg(ImagePlus[] processedChs, MaarsParameters parameters, DefaultSetOfCells soc,
                                        SOCVisualizer socVisualizer, CopyOnWriteArrayList<Map<String, Future>> tasksSet,
                                          AtomicBoolean stop) {
       ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-      
+
       for (int frame = 1; frame <= processedChs[0].getDimensions()[4]; frame++) {
          Map<String, Future> chAnalysisTasks = new HashMap<>();
          for (int j = 0; j < processedChs.length; j++) {

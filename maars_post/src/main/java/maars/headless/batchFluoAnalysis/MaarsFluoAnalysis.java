@@ -42,7 +42,7 @@ public class MaarsFluoAnalysis implements Runnable{
    private PrintStream curr_err = null;
    private PrintStream curr_out = null;
    private String segAnaDir;
-   private int method = 0;
+   public static int METHOD = -1;
    public MaarsFluoAnalysis(ImagePlus[] impChs, String posName, MaarsParameters parameters, SOCVisualizer visualizer){
       processedChs_ = impChs;
       parameters_ = parameters;
@@ -79,7 +79,7 @@ public class MaarsFluoAnalysis implements Runnable{
 
          CopyOnWriteArrayList<Map<String, Future>> tasksSet = new CopyOnWriteArrayList<>();
          // main analysis step
-         switch (method){
+         switch (METHOD){
             case 0:
                processStackedImg(processedChs_, parameters_, soc, tasksSet, stop);
                break;
@@ -88,15 +88,8 @@ public class MaarsFluoAnalysis implements Runnable{
          }
          Maars_Interface.waitAllTaskToFinish(tasksSet);
          if (!stop.get() && soc.size() != 0) {
-            long startWriting = System.currentTimeMillis();
-            ArrayList<String> arrayChannels = new ArrayList<>();
-            Collections.addAll(arrayChannels, usingChannels);
-            FileUtils.createFolder(parameters_.getSavingPath() + File.separator + parameters_.getFluoParameter(MaarsParameters.FLUO_PREFIX)
-                  +Maars_Interface.FLUOANALYSIS_SUFFIX);
-            IOUtils.saveAll(soc, processedChs_, parameters_.getSavingPath() + File.separator, parameters_.useDynamic(),
-                  arrayChannels, posName_, parameters_.getFluoParameter(MaarsParameters.FLUO_PREFIX));
-            IJ.log("It took " + (double) (System.currentTimeMillis() - startWriting) / 1000
-                  + " sec for writing results");
+            IOUtils.saveAll(METHOD, soc, processedChs_, parameters_.getSavingPath() + File.separator, parameters_.useDynamic(),
+                  usingChannels, posName_, parameters_.getFluoParameter(MaarsParameters.FLUO_PREFIX));
             analyzeMitosisDynamic(soc, parameters_, processedChs_[0].getCalibration());
          }
       soc.reset();
@@ -116,8 +109,7 @@ public class MaarsFluoAnalysis implements Runnable{
          String channel = usingChannels[j];
          IJ.log("Processing channel " + channel );
          Future future = es.submit(new TrackmateAnalyzer(processedChs[j],
-                 soc, channel, Integer.parseInt(parameters.getChMaxNbSpot(channel)),
-                 Double.parseDouble(parameters.getChSpotRaius(channel)),
+                 soc, channel, Double.parseDouble(parameters.getChSpotRaius(channel)),
                  Double.parseDouble(parameters.getChQuality(channel))));
          chAnalysisTasks.put(channel, future);
       }
@@ -167,7 +159,6 @@ public class MaarsFluoAnalysis implements Runnable{
          int anaBOnsetFrame = Integer.valueOf(((String[]) slopeChanges.get(cellNb))[1]);
          int lastAnaphaseFrame = Integer.valueOf(((String[]) slopeChanges.get(cellNb))[3]);
          Cell cell = soc.getCell(cellNbInt);
-         cell.setAnaBOnsetFrame(anaBOnsetFrame);
          ArrayList<Integer> spotInBtwnFrames = cell.getSpotInBtwnFrames();
          if (spotInBtwnFrames.size() > 0) {
             Collections.sort(spotInBtwnFrames);
@@ -198,18 +189,23 @@ public class MaarsFluoAnalysis implements Runnable{
       String mitoDir = pathToRoot + parameters.getFluoParameter(MaarsParameters.FLUO_PREFIX)+"_"+MITODIRNAME
             + File.separator + pos + File.separator;
       FileUtils.createFolder(mitoDir);
-
-      String[] mitosis_cmd = new String[]{PythonPipeline.getPythonDefaultPathInConda(), MaarsParameters.DEPS_DIR +
-            PythonPipeline.ANALYSING_SCRIPT_NAME, pathToRoot, Double.toString(calib.pixelWidth), pos,
-              Double.toString(calib.frameInterval)};
-      ArrayList<String> cmds = new ArrayList<>();
-      cmds.add(String.join(" ", mitosis_cmd));
-      String bashPath = mitoDir + "pythonAnalysis.sh";
-      FileUtils.writeScript(bashPath, cmds);
-      IJ.log("Script saved. If it fails, you can still run it manually afterward.");
-      PythonPipeline.runPythonScript(mitosis_cmd, mitoDir + "mitosisDetection_log.txt");
+      switch (METHOD){
+         case 0:
+            //TODO
+            break;
+         default:
+            String[] mitosis_cmd = new String[]{PythonPipeline.getPythonDefaultPathInConda(), MaarsParameters.DEPS_DIR +
+                    PythonPipeline.ANALYSING_SCRIPT_NAME, pathToRoot, Double.toString(calib.pixelWidth), pos,
+                    Double.toString(calib.frameInterval)};
+            ArrayList<String> cmds = new ArrayList<>();
+            cmds.add(String.join(" ", mitosis_cmd));
+            String bashPath = mitoDir + "pythonAnalysis.sh";
+            FileUtils.writeScript(bashPath, cmds);
+            IJ.log("Script saved. If it fails, you can still run it manually afterward.");
+            PythonPipeline.runPythonScript(mitosis_cmd, mitoDir + "mitosisDetection_log.txt");
 //      if (parameters.useDynamic()) {
 //         findAbnormalCells(mitoDir, soc, getMitoticCellNbs(mitoDir));
 //      }
+      }
    }
 }

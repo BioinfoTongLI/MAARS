@@ -23,7 +23,7 @@ public class Cell implements Serializable {
    private GeometryContainer geoContainer;
    private ArrayList<Integer> spotInBetweenFrames = new ArrayList<>();
    private ArrayList<Integer> frameWithUnalignedSpot_ = new ArrayList<>();
-   private int anaBOnsetFrame_;
+   private HashMap<String, Model> chModels = new HashMap<>();
 
    /**
     * @param roiCellShape : ROI that correspond to segmented cell
@@ -108,10 +108,6 @@ public class Cell implements Serializable {
       return this.spotInBetweenFrames;
    }
 
-   public void setAnaBOnsetFrame(int anaBOnsetFrame) {
-      anaBOnsetFrame_ = anaBOnsetFrame;
-   }
-
    public void addFrameWithUnalignedSpot(int frame) {
       frameWithUnalignedSpot_.add(frame);
    }
@@ -126,5 +122,12 @@ public class Cell implements Serializable {
 
    public Boolean hasUnalignedDots(){
         return frameWithUnalignedSpot_.size() > 0;
+   }
+   public void putModel(String ch, Model model){
+      this.chModels.put(ch, model);
+   }
+
+   public Model getModel(String ch){
+      return this.chModels.get(ch);
    }
 }

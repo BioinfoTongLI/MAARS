@@ -33,6 +33,9 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
    @Parameter
    private String suffix;
 
+   @Parameter
+   private int met;
+
    @Override
    public void run() {
       Maars_Interface.copyDeps();
@@ -77,7 +80,7 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
             processedChs = ImgUtils.preprocessChs(concatenatedFluoImgs, usingChannels,
                   processedImgFolder, true, true);
          }
-
+         MaarsFluoAnalysis.METHOD = met;
          Thread th = new Thread(new MaarsFluoAnalysis(processedChs, serieNbPos.get(serie),
                  parameter, visualizer));
          th.start();

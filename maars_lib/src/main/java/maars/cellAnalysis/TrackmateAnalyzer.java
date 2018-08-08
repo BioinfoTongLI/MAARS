@@ -27,8 +27,10 @@ public class TrackmateAnalyzer implements Runnable {
     private double quality;
     private String channel;
     private DefaultSetOfCells soc;
+    private double minMitosisDuration;
 
-    public TrackmateAnalyzer(ImagePlus fluoImage, DefaultSetOfCells soc, String ch, double rad, double qual){
+    public TrackmateAnalyzer(ImagePlus fluoImage, DefaultSetOfCells soc, String ch, double rad, double qual,
+                             double minMitosisDuration){
         this.targetImgs = new ImagePlus[soc.size()];
         for (int i = 1 ; i <= soc.size(); i++){
             fluoImage.setRoi(soc.getCell(i).getCellShapeRoi());
@@ -39,6 +41,7 @@ public class TrackmateAnalyzer implements Runnable {
         this.quality = qual;
         this.channel = ch;
         this.soc = soc;
+        this.minMitosisDuration = minMitosisDuration;
     }
 
     @Override
@@ -83,10 +86,11 @@ public class TrackmateAnalyzer implements Runnable {
             settings.addTrackAnalyzer(new TrackSpeedStatisticsAnalyzer());
             settings.addTrackAnalyzer(new TrackSpotQualityFeatureAnalyzer());
 
-            FeatureFilter filter2 = new FeatureFilter(TrackDurationAnalyzer.TRACK_DURATION, 200d, true);
-            FeatureFilter filter3 = new FeatureFilter(TrackDurationAnalyzer.TRACK_DISPLACEMENT, 1d, true);
+            FeatureFilter filter2 = new FeatureFilter(TrackDurationAnalyzer.TRACK_DURATION,
+                    minMitosisDuration, true);
+//            FeatureFilter filter3 = new FeatureFilter(TrackDurationAnalyzer.TRACK_DISPLACEMENT, 1d, true);
             settings.addTrackFilter(filter2);
-            settings.addTrackFilter(filter3);
+//            settings.addTrackFilter(filter3);
 
             TrackMate trackmate = new TrackMate(model, settings);
 

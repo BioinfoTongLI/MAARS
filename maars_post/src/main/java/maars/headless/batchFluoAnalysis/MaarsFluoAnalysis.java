@@ -110,7 +110,8 @@ public class MaarsFluoAnalysis implements Runnable{
          IJ.log("Processing channel " + channel );
          Future future = es.submit(new TrackmateAnalyzer(processedChs[j],
                  soc, channel, Double.parseDouble(parameters.getChSpotRaius(channel)),
-                 Double.parseDouble(parameters.getChQuality(channel))));
+                 Double.parseDouble(parameters.getChQuality(channel)),
+                 Double.parseDouble(parameters.getMinimumMitosisDuration())));
          chAnalysisTasks.put(channel, future);
       }
       tasksSet.add(chAnalysisTasks);

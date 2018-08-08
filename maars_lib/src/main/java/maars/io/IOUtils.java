@@ -75,7 +75,7 @@ public class IOUtils {
                String tracksDir = dest + "tracks" + File.separator;
                FileUtils.createFolder(tracksDir);
                for (int j = 1; j <= arrayChannels.length; j++) {
-                  File outputFile = new File(tracksDir + i + "_" + arrayChannels[j - 1]);
+                  File outputFile = new File(tracksDir + i + "_" + arrayChannels[j - 1] + ".xml");
                   TmXmlWriter writer = new TmXmlWriter(outputFile);
                   Model currentModel = cell.getModel(arrayChannels[j - 1]);
                   if (currentModel != null) {

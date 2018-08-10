@@ -11,7 +11,7 @@ import fiji.plugin.trackmate.features.spot.*;
 import fiji.plugin.trackmate.features.track.*;
 import fiji.plugin.trackmate.tracking.LAPUtils;
 import fiji.plugin.trackmate.tracking.TrackerKeys;
-import fiji.plugin.trackmate.tracking.sparselap.SparseLAPTrackerFactory;
+import fiji.plugin.trackmate.tracking.oldlap.SimpleLAPTrackerFactory;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.plugin.Duplicator;
@@ -73,11 +73,14 @@ public class TrackmateAnalyzer implements Runnable {
             settings.addEdgeAnalyzer(new EdgeTargetAnalyzer());
             settings.addEdgeAnalyzer(new EdgeTimeLocationAnalyzer());
 
-            settings.trackerFactory = new SparseLAPTrackerFactory();
+            settings.trackerFactory = new SimpleLAPTrackerFactory();
             settings.trackerSettings = LAPUtils.getDefaultLAPSettingsMap();
-            settings.trackerSettings.put(TrackerKeys.KEY_ALLOW_TRACK_SPLITTING, true);
-            settings.trackerSettings.put(TrackerKeys.KEY_ALLOW_TRACK_MERGING, true);
-            settings.trackerSettings.put(TrackerKeys.KEY_ALLOW_GAP_CLOSING, true);
+//            settings.trackerSettings.put(TrackerKeys.KEY_ALLOW_TRACK_SPLITTING, true);
+//            settings.trackerSettings.put(TrackerKeys.KEY_ALLOW_TRACK_MERGING, true);
+//            settings.trackerSettings.put(TrackerKeys.KEY_MERGING_MAX_DISTANCE, 1d);
+            settings.trackerSettings.put(TrackerKeys.KEY_LINKING_MAX_DISTANCE, 1.5d);
+            settings.trackerSettings.put(TrackerKeys.KEY_GAP_CLOSING_MAX_DISTANCE, 1.5d);
+            settings.trackerSettings.put(TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP, 10);
 
             settings.addTrackAnalyzer(new TrackDurationAnalyzer());
             settings.addTrackAnalyzer(new TrackBranchingAnalyzer());
@@ -88,9 +91,7 @@ public class TrackmateAnalyzer implements Runnable {
 
             FeatureFilter filter2 = new FeatureFilter(TrackDurationAnalyzer.TRACK_DURATION,
                     minMitosisDuration, true);
-//            FeatureFilter filter3 = new FeatureFilter(TrackDurationAnalyzer.TRACK_DISPLACEMENT, 1d, true);
             settings.addTrackFilter(filter2);
-//            settings.addTrackFilter(filter3);
 
             TrackMate trackmate = new TrackMate(model, settings);
 
@@ -101,7 +102,7 @@ public class TrackmateAnalyzer implements Runnable {
 
             ok = trackmate.process();
             if (!ok) {
-                IJ.log(trackmate.getErrorMessage());
+                IJ.log(trackmate.getErrorMessage() + "-- cell # : " + (i + 1));
             }else{
                 soc.addPotentialMitosisCell(i+1);
                 soc.getCell(i+1).putModel(channel, trackmate.getModel());

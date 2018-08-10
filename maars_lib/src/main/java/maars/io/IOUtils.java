@@ -4,17 +4,13 @@ import fiji.plugin.trackmate.Model;
 import fiji.plugin.trackmate.io.TmXmlWriter;
 import ij.IJ;
 import ij.ImagePlus;
-import ij.plugin.Duplicator;
 import maars.agents.Cell;
 import maars.agents.DefaultSetOfCells;
-import maars.main.MaarsParameters;
 import maars.main.Maars_Interface;
 import maars.utils.FileUtils;
-import maars.utils.ImgUtils;
+
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -67,6 +63,9 @@ public class IOUtils {
       FileUtils.createFolder(dest);
 //        TODO
       CopyOnWriteArrayList<Integer> cellIndex = soc.getPotentialMitosisCell();
+      MAARSImgSaver imgSaver = new MAARSImgSaver(dest, arrayChannels);
+      MAARSSpotsSaver spotSaver = new MAARSSpotsSaver(dest);
+      MAARSGeometrySaver geoSaver = new MAARSGeometrySaver(dest);
       for (int i : cellIndex) {
          Cell cell = soc.getCell(i);
 //        for (Cell cell : soc){
@@ -89,22 +88,10 @@ public class IOUtils {
                }
                break;
             default:
-               MAARSSpotsSaver spotSaver = new MAARSSpotsSaver(dest);
-               MAARSGeometrySaver geoSaver = new MAARSGeometrySaver(dest);
-               MAARSImgSaver imgSaver = new MAARSImgSaver(dest);
-               ImagePlus croppedImg;
-               Duplicator duplicator = new Duplicator();
                geoSaver.save(cell);
                spotSaver.save(cell);
-               for (int j = 1; j <= arrayChannels.length; j++) {
-                  processStack[j-1].setRoi(cell.getCellShapeRoi());
-                  croppedImg = duplicator.run(processStack[j-1], 1, processStack[j-1].getNFrames());
-                  IJ.run(croppedImg, "Grays", "");
-                  croppedImg.setRoi(ImgUtils.centerCroppedRoi(cell.getCellShapeRoi()));
-                  imgSaver.saveImgs(croppedImg, i, arrayChannels[j - 1], false);
-               }
          }
-
+         imgSaver.saveImgs(processStack, cell.getCellShapeRoi(), i);
       }
       if (useDynamic) {
          IOUtils.serializeSoc(dest, soc);

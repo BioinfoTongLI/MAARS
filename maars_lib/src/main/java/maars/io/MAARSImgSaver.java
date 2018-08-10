@@ -2,36 +2,35 @@ package maars.io;
 
 import ij.IJ;
 import ij.ImagePlus;
-import ij.plugin.Concatenator;
+import ij.gui.Roi;
+import ij.plugin.Duplicator;
 import maars.utils.FileUtils;
+import maars.utils.ImgUtils;
 
 import java.io.File;
 
 public class MAARSImgSaver {
-   public static final String croppedImgs = "croppedImgs";
-   public String croppedImgDir;
+   private static final String croppedImgs = "croppedImgs";
+   private String croppedImgDir;
+   private Duplicator duplicator = new Duplicator();
+   private String[] chNames;
 
-   public MAARSImgSaver(String pathToFluoDir) {
+   MAARSImgSaver(String pathToFluoDir, String[] chNames) {
       this.croppedImgDir = pathToFluoDir + File.separator + croppedImgs + File.separator;
       FileUtils.createFolder(croppedImgDir);
+      this.chNames = chNames;
    }
 
-   /**
-    * @param croppedImg  set of image
-    * @param cellNb      number of current cell
-    * @param channelName channel name
-    * @param append      append to existing image or not
-    */
-   public void saveImgs(ImagePlus croppedImg, int cellNb, String channelName, boolean append) {
-      String pathToCroppedImg = croppedImgDir + String.valueOf(cellNb) + "_" + channelName + ".tif";
-      IJ.run(croppedImg, "Enhance Contrast", "saturated=0.35");
-      if (FileUtils.exists(pathToCroppedImg) && append) {
-         Concatenator concatenator = new Concatenator();
-         concatenator.setIm5D(true);
-         ImagePlus new_croppedImg = concatenator.concatenate(IJ.openImage(pathToCroppedImg), croppedImg, false);
-         new_croppedImg.setRoi(croppedImg.getRoi());
-         IJ.saveAsTiff(new_croppedImg, pathToCroppedImg);
-      } else {
+   public void saveImgs(ImagePlus[] entireField, Roi roi, int cellNb){
+      ImagePlus croppedImg;
+      for (int j = 1; j <= chNames.length; j++) {
+         entireField[j-1].setRoi(roi);
+         croppedImg = duplicator.run(entireField[j-1], 1, entireField[j-1].getNFrames());
+         IJ.run(croppedImg, "Grays", "");
+         croppedImg.setRoi(ImgUtils.centerCroppedRoi(roi));
+         IJ.run(croppedImg, "Enhance Contrast", "saturated=0.35");
+         IJ.run(croppedImg, "Clear Outside", "stack");
+         String pathToCroppedImg = croppedImgDir + String.valueOf(cellNb) + "_" + chNames[j-1] + ".tif";
          IJ.saveAsTiff(croppedImg, pathToCroppedImg);
       }
    }

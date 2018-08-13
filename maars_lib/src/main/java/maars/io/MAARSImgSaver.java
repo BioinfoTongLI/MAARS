@@ -14,10 +14,11 @@ public class MAARSImgSaver {
    private String croppedImgDir;
    private Duplicator duplicator = new Duplicator();
    private String[] chNames;
+   public boolean exists;
 
    MAARSImgSaver(String pathToFluoDir, String[] chNames) {
       this.croppedImgDir = pathToFluoDir + File.separator + croppedImgs + File.separator;
-      FileUtils.createFolder(croppedImgDir);
+      exists = FileUtils.createFolder(croppedImgDir);
       this.chNames = chNames;
    }
 

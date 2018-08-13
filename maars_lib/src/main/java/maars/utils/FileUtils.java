@@ -60,10 +60,9 @@ public class FileUtils {
     */
    public static Boolean createFolder(String pathToDir) {
       if (!exists(pathToDir)) {
-         File fluoDir = new File(pathToDir);
-         return fluoDir.mkdirs();
+         return new File(pathToDir).mkdirs();
       }
-      return false;
+      return true;
    }
 
    /**

@@ -91,7 +91,12 @@ public class IOUtils {
                geoSaver.save(cell);
                spotSaver.save(cell);
          }
-         imgSaver.saveImgs(processStack, cell.getCellShapeRoi(), i);
+      }
+      if (!imgSaver.exists) {
+         for (int i : cellIndex){
+            Cell cell = soc.getCell(i);
+            imgSaver.saveImgs(processStack, cell.getCellShapeRoi(), i);
+         }
       }
       if (useDynamic) {
          IOUtils.serializeSoc(dest, soc);

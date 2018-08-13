@@ -60,7 +60,7 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
    
          ImagePlus[] processedChs;
          String firstChImgPath = processedImgFolder + File.separator + usingChannels[0] + "_aligned.tif";
-         String secChImgPath = processedImgFolder + File.separator + usingChannels[0] + "_aligned.tif";
+         String secChImgPath = processedImgFolder + File.separator + usingChannels[1] + "_aligned.tif";
          if (FileUtils.exists(firstChImgPath) &&
                  FileUtils.exists(secChImgPath)) {
             IJ.log("Using previously preprocessed images...");

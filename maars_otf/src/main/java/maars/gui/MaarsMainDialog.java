@@ -229,7 +229,7 @@ public class MaarsMainDialog extends JFrame implements ActionListener {
       strategyPanel.add(staticOpt);
       strategyPanel.add(dynamicOpt);
       fluoAcqDurationTf = new JFormattedTextField(Double.class);
-      fluoAcqDurationTf.setValue(parameters.getFluoParameter(MaarsParameters.TIME_LIMIT));
+//      fluoAcqDurationTf.setValue(parameters.getFluoParameter(MaarsParameters.TIME_LIMIT));
       strategyPanel.add(fluoAcqDurationTf);
       strategyPanel.add(new JLabel("min", SwingConstants.CENTER));
       strategyPanel.setBackground(GuiUtils.bgColor);
@@ -296,9 +296,9 @@ public class MaarsMainDialog extends JFrame implements ActionListener {
       if (!savePathTf.getText().equals(parameters_.getSavingPath())) {
          parameters_.setSavingPath(savePathTf.getText());
       }
-      if (!fluoAcqDurationTf.getText().equals(parameters_.getFluoParameter(MaarsParameters.TIME_LIMIT))) {
-         parameters_.setFluoParameter(MaarsParameters.TIME_LIMIT, fluoAcqDurationTf.getText());
-      }
+//      if (!fluoAcqDurationTf.getText().equals(parameters_.getFluoParameter(MaarsParameters.TIME_LIMIT))) {
+//         parameters_.setFluoParameter(MaarsParameters.TIME_LIMIT, fluoAcqDurationTf.getText());
+//      }
 
       parameters_.setPathToPositionList(posListTf_.getText());
       parameters_.setSegmentationParameter(MaarsParameters.PATH_TO_BF_ACQ_SETTING, pathToBfAcqSettingTf_.getText());

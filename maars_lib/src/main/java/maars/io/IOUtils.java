@@ -92,11 +92,9 @@ public class IOUtils {
                spotSaver.save(cell);
          }
       }
-      if (!imgSaver.exists) {
-         for (int i : cellIndex){
-            Cell cell = soc.getCell(i);
-            imgSaver.saveImgs(processStack, cell.getCellShapeRoi(), i);
-         }
+      for (int i : cellIndex){
+         Cell cell = soc.getCell(i);
+         imgSaver.saveImgs(processStack, cell.getCellShapeRoi(), i);
       }
       if (useDynamic) {
          IOUtils.serializeSoc(dest, soc);

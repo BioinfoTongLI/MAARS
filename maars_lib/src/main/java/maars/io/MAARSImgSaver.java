@@ -14,25 +14,26 @@ public class MAARSImgSaver {
    private String croppedImgDir;
    private Duplicator duplicator = new Duplicator();
    private String[] chNames;
-   public boolean exists;
 
    MAARSImgSaver(String pathToFluoDir, String[] chNames) {
       this.croppedImgDir = pathToFluoDir + File.separator + croppedImgs + File.separator;
-      exists = FileUtils.createFolder(croppedImgDir);
+      FileUtils.createFolder(croppedImgDir);
       this.chNames = chNames;
    }
 
    public void saveImgs(ImagePlus[] entireField, Roi roi, int cellNb){
       ImagePlus croppedImg;
       for (int j = 1; j <= chNames.length; j++) {
-         entireField[j-1].setRoi(roi);
-         croppedImg = duplicator.run(entireField[j-1], 1, entireField[j-1].getNFrames());
-         IJ.run(croppedImg, "Grays", "");
-         croppedImg.setRoi(ImgUtils.centerCroppedRoi(roi));
-         IJ.run(croppedImg, "Enhance Contrast", "saturated=0.35");
-         IJ.run(croppedImg, "Clear Outside", "stack");
          String pathToCroppedImg = croppedImgDir + String.valueOf(cellNb) + "_" + chNames[j-1] + ".tif";
-         IJ.saveAsTiff(croppedImg, pathToCroppedImg);
+         if (!FileUtils.exists(pathToCroppedImg)) {
+            entireField[j - 1].setRoi(roi);
+            croppedImg = duplicator.run(entireField[j - 1], 1, entireField[j - 1].getNFrames());
+            IJ.run(croppedImg, "Grays", "");
+            croppedImg.setRoi(ImgUtils.centerCroppedRoi(roi));
+            IJ.run(croppedImg, "Enhance Contrast", "saturated=0.35");
+            IJ.run(croppedImg, "Clear Outside", "stack");
+            IJ.saveAsTiff(croppedImg, pathToCroppedImg);
+         }
       }
    }
 

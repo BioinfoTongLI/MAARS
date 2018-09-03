@@ -37,7 +37,7 @@ if __name__ == '__main__':
     df_sp_lens = analyser.get_elongations(path_to_mito_features)
 
     # plotting#################
-    Plotting.plot_elong(df_sp_lens, True, root / Constants.MITO_DIR)
+    Plotting.plot_elong(df_sp_lens, root / Constants.MITO_DIR)
 
     valid_cells = ComputeFeatures.cells_contain_kts(dict_id_poles, dict_id_kts)
     print(valid_cells)

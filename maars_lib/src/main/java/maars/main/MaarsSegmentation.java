@@ -84,11 +84,11 @@ public class MaarsSegmentation implements Runnable {
       // Calibrate parameters
 
       ImgUtils.checkImgUnitsAndScale(img_, segPombeParam);
-      ImgUtils.changeScale(
-            img_,
-            Integer.parseInt(parameters.getSegmentationParameter(MaarsParameters.NEW_MAX_WIDTH_FOR_CHANGE_SCALE)),
-            Integer.parseInt(parameters.getSegmentationParameter(MaarsParameters.NEW_MAX_HEIGTH_FOR_CHANGE_SCALE)),
-            segPombeParam);
+//      ImgUtils.changeScale(
+//            img_,
+//            Integer.parseInt(parameters.getSegmentationParameter(MaarsParameters.NEW_MAX_WIDTH_FOR_CHANGE_SCALE)),
+//            Integer.parseInt(parameters.getSegmentationParameter(MaarsParameters.NEW_MAX_HEIGTH_FOR_CHANGE_SCALE)),
+//            segPombeParam);
 
       segPombeParam.setSigma(
             (int) Math.round(Double.parseDouble(parameters.getSegmentationParameter(MaarsParameters.CELL_THICKNESS))

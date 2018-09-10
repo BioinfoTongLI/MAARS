@@ -28,10 +28,7 @@ import java.io.*;
  *    |
  *    +-----> TOLERANCE
  *    +-----> PATH_TO_BF_ACQ_SETTING
- *    +-----> SKIP
  *    +-----> CHANNEL
- *    +-----> NEW_MAX_WIDTH_FOR_CHANGE_SCALE
- *    +-----> NEW_MAX_HEIGTH_FOR_CHANGE_SCALE
  *    +-----> FRAME_NUMBER
  *    +-----> RANGE_SIZE_FOR_MOVIE
  *    +-----> STEP
@@ -50,7 +47,6 @@ import java.io.*;
  *    +-----> PATH_TO_FLUO_ACQ_SETTING
  *    +-----> USING
  *    +-----> DYNAMIC
- *    +-----> DO_ANALYSIS
  *    +-----> PROJECTED
  *    
  * GENERAL_ACQUISITION_PARAMETERS
@@ -86,7 +82,6 @@ public class MaarsParameters {
    public static final String MEAN_GREY_VALUE = "MEAN_GREY_VALUE";
    public static final String FILTER_SOLIDITY = "FILTER_SOLIDITY";
    public static final String SOLIDITY = "SOLIDITY";
-   public static final String DO_ANALYSIS = "DO_ANALYSIS";
    public static final String CHANNEL = "CHANNEL";
    public static final String PROJECTED = "PROJECTED";
    public static final String PATH_TO_BF_ACQ_SETTING = "PATH_TO_BF_ACQ_SETTING";
@@ -94,8 +89,6 @@ public class MaarsParameters {
    public static final String SEG_PREFIX = "SEG_PREFIX";
    public static final String FLUO_PREFIX = "FLUO_PREFIX";
    static final String CELL_THICKNESS = "CELL_THICKNESS";
-   static final String NEW_MAX_WIDTH_FOR_CHANGE_SCALE = "NEW_MAX_WIDTH_FOR_CHANGE_SCALE";
-   static final String NEW_MAX_HEIGTH_FOR_CHANGE_SCALE = "NEW_MAX_HEIGTH_FOR_CHANGE_SCALE";
    private static final String SEGMENTATION_PARAMETERS = "SEGMENTATION_PARAMETERS";
    private static final String FLUO_ANALYSIS_PARAMETERS = "FLUO_ANALYSIS_PARAMETERS";
    private static final String MITOSIS_DETECTION_PARAMETERS = "MITOSIS_DETECTION_PARAMETERS";
@@ -108,7 +101,6 @@ public class MaarsParameters {
    private static final String USING = "USING";
    private static final String GENERAL_ACQUISITION_PARAMETERS = "GENERAL_ACQUISITION_PARAMETERS";
    private static final String DEFAULT_CHANNEL_PARAMATERS = "DEFAULT_CHANNEL_PARAMATERS";
-   private static final String SKIP = "SKIP";
    public static final String FOCUS= "FOCUS";
    public static final String DIRECTION = "DIRECTION";
    public static final String DEPS_DIR = IJ.getDirectory("macros");
@@ -308,17 +300,6 @@ public class MaarsParameters {
     */
    public void setUsingChannels(String channels) {
       root.getChild(FLUO_ANALYSIS_PARAMETERS).getChild(USING).setText(channels);
-   }
-
-   /**
-    * @return whether or not skip the segmentation
-    */
-   public String getSkipSegmentation() {
-      return root.getChild(SEGMENTATION_PARAMETERS).getChildText(SKIP);
-   }
-
-   public void setSkipSegmentation(Boolean skip) {
-      root.getChild(SEGMENTATION_PARAMETERS).getChild(SKIP).setText(String.valueOf(skip));
    }
 
    /**

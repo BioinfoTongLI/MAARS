@@ -19,7 +19,6 @@ import java.util.ArrayList;
 public class MaarsFluoAnalysisDialog extends JDialog {
 
    private static final long serialVersionUID = 1L;
-   private JCheckBox doAnaChx_ = new JCheckBox("Do analysis?");
    private MaarsParameters parameters_;
    private JFormattedTextField mitosisDurationTf_;
    private JCheckBox projected_;
@@ -27,8 +26,6 @@ public class MaarsFluoAnalysisDialog extends JDialog {
 
    public MaarsFluoAnalysisDialog(MaarsParameters parameters) {
       super();
-      doAnaChx_.setSelected(true);
-      doAnaChx_.setEnabled(false);
       createDialog(parameters);
    }
 
@@ -88,7 +85,6 @@ public class MaarsFluoAnalysisDialog extends JDialog {
    private void updateParameters(MaarsParameters parameters) {
       parameters.setMinimumMitosisDuration(mitosisDurationTf_.getText());
       parameters.setProjected(String.valueOf(projected_.isSelected()));
-      parameters.setFluoParameter(MaarsParameters.DO_ANALYSIS, String.valueOf(doAnaChx_.isSelected()));
       String[] chNames = MaarsParameters.getChArray(parameters);
       for (int i = 0; i < chNames.length; i++) {
          String ch = chNames[i];
@@ -202,8 +198,6 @@ public class MaarsFluoAnalysisDialog extends JDialog {
    private JPanel generateChbxPanel(MaarsParameters parameters) {
       JPanel chbxPanel = new JPanel(new GridLayout(1, 0));
       chbxPanel.setBackground(GuiUtils.bgColor);
-      chbxPanel.add(doAnaChx_);
-      doAnaChx_.setSelected(Boolean.valueOf(parameters.getFluoParameter(MaarsParameters.DO_ANALYSIS)));
       projected_ = new JCheckBox("Project cropped images?",
             Boolean.parseBoolean(parameters.getFluoParameter(MaarsParameters.PROJECTED)));
       chbxPanel.add(projected_);

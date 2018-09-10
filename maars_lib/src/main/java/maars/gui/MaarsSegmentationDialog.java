@@ -32,7 +32,6 @@ public class MaarsSegmentationDialog extends JDialog implements ActionListener {
    private JTextField greyValue;
    private JTextField minCellArea;
    private JTextField maxCellArea;
-   private JCheckBox skipSegChBox;
    private JButton okBut;
 
    public MaarsSegmentationDialog(final MaarsParameters parameters, JFrame maarsMainFrame){
@@ -146,22 +145,6 @@ public class MaarsSegmentationDialog extends JDialog implements ActionListener {
 
       //
 
-      skipSegChBox = new JCheckBox();
-      skipSegChBox.setSelected(Boolean.parseBoolean(parameters_.getSkipSegmentation()));
-      skipSegChBox.setText("Skip segmentation");
-      skipSegChBox.addActionListener(e -> {
-         if (skipSegChBox.isSelected()) {
-            YesNoCancelDialog yesNoCancelDialog = new YesNoCancelDialog(null,
-                  "Skip segmentation",
-                  "Do you have ROI.zip and BF_Results.csv in all your folders ?");
-            parameters_.setSkipSegmentation(yesNoCancelDialog.yesPressed());
-            skipSegChBox.setSelected(yesNoCancelDialog.yesPressed());
-            parameters_.setSkipSegmentation(yesNoCancelDialog.yesPressed());
-         } else {
-            parameters_.setSkipSegmentation(false);
-         }
-      });
-      skipTestPanel.add(skipSegChBox);
       skipTestPanel.add(testSegBut);
 
       //
@@ -190,7 +173,6 @@ public class MaarsSegmentationDialog extends JDialog implements ActionListener {
             String.valueOf(shapeFilter.isSelected()));
       parameters_.setSegmentationParameter(MaarsParameters.SOLIDITY,
             solidity.getText());
-      parameters_.setSkipSegmentation(skipSegChBox.isSelected());
    }
 
    /**

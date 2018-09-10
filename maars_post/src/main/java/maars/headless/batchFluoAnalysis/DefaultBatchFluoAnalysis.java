@@ -53,7 +53,7 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
       SOCVisualizer visualizer;
 
       for (int serie : serieNbPos.keySet()) {
-         visualizer = new SOCVisualizer(usingChannels);
+         visualizer = new SOCVisualizer(d + "|" + serieNbPos.get(serie), usingChannels);
          visualizer.setVisible(true);
          String processedImgFolder = fluoDir + "_processed_" + serieNbPos.get(serie);
          FileUtils.createFolder(processedImgFolder);
@@ -89,7 +89,7 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
          } catch (InterruptedException e) {
             e.printStackTrace();
          }
-         visualizer.clear();
+//         visualizer.clear();
       }
    }
 }

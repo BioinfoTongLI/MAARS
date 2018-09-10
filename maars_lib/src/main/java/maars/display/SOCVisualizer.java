@@ -50,8 +50,8 @@ public class SOCVisualizer extends JFrame implements MouseListener, KeyListener{
 
    private final CombinedDomainXYPlot plot = new CombinedDomainXYPlot(new NumberAxis());
 
-   public SOCVisualizer(String[] channels) {
-      super("Display cells with at least 1 spot detected");
+   public SOCVisualizer(String title, String[] channels) {
+      super(title);
       setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
       this.channels = channels;
@@ -312,7 +312,7 @@ public class SOCVisualizer extends JFrame implements MouseListener, KeyListener{
    }
 
    public static void main(String[] args) {
-      SOCVisualizer visualizer = new SOCVisualizer(new String[]{"CFP", "GFP"});
+      SOCVisualizer visualizer = new SOCVisualizer("test", new String[]{"CFP", "GFP"});
       DefaultSetOfCells soc = new DefaultSetOfCells("test");
       visualizer.updateCellList(soc);
       visualizer.setVisible(true);

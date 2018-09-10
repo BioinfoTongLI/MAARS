@@ -43,9 +43,6 @@ public class SOCVisualizer extends JFrame implements MouseListener, KeyListener{
    /** The datasets. */
    private XYSeriesCollection[] datasets;
 
-   /** The most recent value added to series 1. */
-   private double[] lastValue = new double[SUBPLOT_COUNT];
-
    private String[] channels;
 
    private final CombinedDomainXYPlot plot = new CombinedDomainXYPlot(new NumberAxis());

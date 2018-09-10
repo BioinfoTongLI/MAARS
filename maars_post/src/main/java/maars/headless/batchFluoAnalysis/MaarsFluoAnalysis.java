@@ -25,7 +25,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by tong on 30/06/17.
@@ -43,7 +42,9 @@ public class MaarsFluoAnalysis implements Runnable{
    private PrintStream curr_out = null;
    private String segAnaDir;
    public static int METHOD = -1;
-   public MaarsFluoAnalysis(ImagePlus[] impChs, String posName, MaarsParameters parameters, SOCVisualizer visualizer){
+   private DefaultSetOfCells soc_;
+   public MaarsFluoAnalysis(DefaultSetOfCells soc, ImagePlus[] impChs, String posName, MaarsParameters parameters, SOCVisualizer visualizer){
+      soc_ = soc;
       processedChs_ = impChs;
       parameters_ = parameters;
       usingChannels = parameters_.getUsingChannels().split(",", -1);
@@ -63,36 +64,32 @@ public class MaarsFluoAnalysis implements Runnable{
    }
    @Override
    public void run() {
-      AtomicBoolean stop = new AtomicBoolean(false);
-      DefaultSetOfCells soc;
-      soc = new DefaultSetOfCells(posName_);
       String currentPosPrefix = segAnaDir + posName_ + File.separator;
       String currentZipPath = currentPosPrefix + "ROI.zip";
       if (FileUtils.exists(currentZipPath)) {
          // from Roi.zip initialize a set of cell
-         soc.loadCells(currentZipPath);
+         soc_.loadCells(currentZipPath);
          IJ.open(currentPosPrefix + "Results.csv");
          ResultsTable rt = ResultsTable.getResultsTable();
          ResultsTable.getResultsWindow().close(false);
-         soc.addRoiMeasurementIntoCells(rt);
+         soc_.addRoiMeasurementIntoCells(rt);
          // ----------------start acquisition and analysis --------//
 
          CopyOnWriteArrayList<Map<String, Future>> tasksSet = new CopyOnWriteArrayList<>();
          // main analysis step
          switch (METHOD){
             case 0:
-               processStackedImg(processedChs_, parameters_, soc, tasksSet, stop);
+               processStackedImg(processedChs_, parameters_, soc_, tasksSet);
                break;
             default:
-               processStackedImg(processedChs_, parameters_, soc, visualizer_, tasksSet, stop);
+               processStackedImg(processedChs_, parameters_, soc_, visualizer_, tasksSet);
          }
          Maars_Interface.waitAllTaskToFinish(tasksSet);
-         if (!stop.get() && soc.size() != 0) {
-            IOUtils.saveAll(METHOD, soc, processedChs_, parameters_.getSavingPath() + File.separator, parameters_.useDynamic(),
+         if (soc_.size() != 0) {
+            IOUtils.saveAll(METHOD, soc_, processedChs_, parameters_.getSavingPath() + File.separator, parameters_.useDynamic(),
                   usingChannels, posName_, parameters_.getFluoParameter(MaarsParameters.FLUO_PREFIX));
-            analyzeMitosisDynamic(soc, parameters_, processedChs_[0].getCalibration());
+            analyzeMitosisDynamic(soc_, parameters_, processedChs_[0].getCalibration());
          }
-      soc.reset();
       System.gc();
       }
       System.setErr(curr_err);
@@ -101,8 +98,7 @@ public class MaarsFluoAnalysis implements Runnable{
 
 
    private void processStackedImg(ImagePlus[] processedChs, MaarsParameters parameters, DefaultSetOfCells soc,
-                                  CopyOnWriteArrayList<Map<String, Future>> tasksSet,
-                                  AtomicBoolean stop) {
+                                  CopyOnWriteArrayList<Map<String, Future>> tasksSet) {
       ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
       Map<String, Future> chAnalysisTasks = new HashMap<>();
       for (int j = 0; j < processedChs.length; j++) {
@@ -119,8 +115,7 @@ public class MaarsFluoAnalysis implements Runnable{
 
 
    private void processStackedImg(ImagePlus[] processedChs, MaarsParameters parameters, DefaultSetOfCells soc,
-                                       SOCVisualizer socVisualizer, CopyOnWriteArrayList<Map<String, Future>> tasksSet,
-                                         AtomicBoolean stop) {
+                                       SOCVisualizer socVisualizer, CopyOnWriteArrayList<Map<String, Future>> tasksSet){
       ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
       for (int frame = 1; frame <= processedChs[0].getDimensions()[4]; frame++) {
@@ -137,9 +132,6 @@ public class MaarsFluoAnalysis implements Runnable{
             chAnalysisTasks.put(channel, future);
          }
          tasksSet.add(chAnalysisTasks);
-         if (stop.get()) {
-            break;
-         }
       }
       es.shutdown();
    }

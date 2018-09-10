@@ -3,6 +3,7 @@ package maars.headless.batchFluoAnalysis;
 import ij.IJ;
 import ij.ImagePlus;
 import loci.formats.FormatException;
+import maars.agents.DefaultSetOfCells;
 import maars.display.SOCVisualizer;
 import maars.main.MaarsParameters;
 import maars.main.Maars_Interface;
@@ -50,11 +51,12 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
       String imgPath = Objects.requireNonNull(new File(fluoDir).listFiles(
               (FilenameFilter) new WildcardFileFilter("*." + suffix)))[0].getAbsolutePath();
       Map<Integer, String> serieNbPos = ImgUtils.populateSeriesImgNames(imgPath);
-      SOCVisualizer visualizer;
+
 
       for (int serie : serieNbPos.keySet()) {
-         visualizer = new SOCVisualizer(d + "|" + serieNbPos.get(serie), usingChannels);
+         SOCVisualizer visualizer = new SOCVisualizer(d + "|" + serieNbPos.get(serie), usingChannels);
          visualizer.setVisible(true);
+         DefaultSetOfCells soc = new DefaultSetOfCells(serieNbPos.get(serie));
          String processedImgFolder = fluoDir + "_processed_" + serieNbPos.get(serie);
          FileUtils.createFolder(processedImgFolder);
    
@@ -81,7 +83,7 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
                   processedImgFolder, true, true);
          }
          MaarsFluoAnalysis.METHOD = met;
-         Thread th = new Thread(new MaarsFluoAnalysis(processedChs, serieNbPos.get(serie),
+         Thread th = new Thread(new MaarsFluoAnalysis(soc, processedChs, serieNbPos.get(serie),
                  parameter, visualizer));
          th.start();
          try {
@@ -89,6 +91,8 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
          } catch (InterruptedException e) {
             e.printStackTrace();
          }
+//         TODO to find a way to save these intermedia data
+//         soc.reset();
 //         visualizer.clear();
       }
    }

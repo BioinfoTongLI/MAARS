@@ -60,28 +60,7 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
          String processedImgFolder = fluoDir + "_processed_" + serieNbPos.get(serie);
          FileUtils.createFolder(processedImgFolder);
    
-         ImagePlus[] processedChs;
-         String firstChImgPath = processedImgFolder + File.separator + usingChannels[0] + "_aligned.tif";
-         String secChImgPath = processedImgFolder + File.separator + usingChannels[1] + "_aligned.tif";
-         if (FileUtils.exists(firstChImgPath) &&
-                 FileUtils.exists(secChImgPath)) {
-            IJ.log("Using previously preprocessed images...");
-            processedChs = new ImagePlus[]{
-                  IJ.openImage(firstChImgPath),
-                  IJ.openImage(secChImgPath)
-            };
-         } else {
-            ImagePlus concatenatedFluoImgs = null;
-            try {
-               concatenatedFluoImgs = ImgUtils.lociImport(imgPath, serie);
-            } catch (IOException | FormatException e) {
-               e.printStackTrace();
-               IJ.error("Can not load fluo images...");
-            }
-            assert concatenatedFluoImgs != null;
-            processedChs = ImgUtils.preprocessChs(concatenatedFluoImgs, usingChannels,
-                  processedImgFolder, true, true);
-         }
+         ImagePlus[] processedChs = getChImages(usingChannels, imgPath, serie, processedImgFolder);
          MaarsFluoAnalysis.METHOD = met;
          Thread th = new Thread(new MaarsFluoAnalysis(soc, processedChs, serieNbPos.get(serie),
                  parameter, visualizer));
@@ -96,4 +75,30 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
 //         visualizer.clear();
       }
    }
+
+    private ImagePlus[] getChImages(String[] usingChannels, String imgPath, int serie, String processedImgFolder) {
+        ImagePlus[] processedChs;
+        String firstChImgPath = processedImgFolder + File.separator + usingChannels[0] + "_final.tif";
+        String secChImgPath = processedImgFolder + File.separator + usingChannels[1] + "_final.tif";
+        if (FileUtils.exists(firstChImgPath) &&
+                FileUtils.exists(secChImgPath)) {
+           IJ.log("Using previously preprocessed images...");
+           processedChs = new ImagePlus[]{
+                 IJ.openImage(firstChImgPath),
+                 IJ.openImage(secChImgPath)
+           };
+        } else {
+           ImagePlus concatenatedFluoImgs = null;
+           try {
+              concatenatedFluoImgs = ImgUtils.lociImport(imgPath, serie);
+           } catch (IOException | FormatException e) {
+              e.printStackTrace();
+              IJ.error("Can not load fluo images...");
+           }
+           assert concatenatedFluoImgs != null;
+           processedChs = ImgUtils.preprocessChs(concatenatedFluoImgs, usingChannels,
+                 processedImgFolder, true, true);
+        }
+        return processedChs;
+    }
 }

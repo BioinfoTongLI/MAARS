@@ -419,6 +419,10 @@ public class ImgUtils {
             IJ.saveAsTiff(processedChs[i], processedImgFolder + File.separator + usingChannels[i] + "_aligned");
          }
       }
+      for (int i = 0; i < totalChannel; i++) {
+         processedChs[i].getCalibration().frameInterval = interval;
+         IJ.saveAsTiff(processedChs[i], processedImgFolder + File.separator + usingChannels[i] + "_final");
+      }
       System.gc();
       return processedChs;
    }

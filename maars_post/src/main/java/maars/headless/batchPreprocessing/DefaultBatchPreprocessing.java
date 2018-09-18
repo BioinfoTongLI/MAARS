@@ -1,8 +1,6 @@
-package maars.headless.batchFluoAnalysis;
+package maars.headless.batchPreprocessing;
 
 import ij.ImagePlus;
-import maars.agents.DefaultSetOfCells;
-import maars.display.SOCVisualizer;
 import maars.main.MaarsParameters;
 import maars.main.Maars_Interface;
 import maars.utils.FileUtils;
@@ -18,9 +16,9 @@ import java.io.FilenameFilter;
 import java.util.Map;
 import java.util.Objects;
 
-@Plugin(type=BatchFluoAnalysis.class, name = BatchFluoAnalysis.NAME,
-      attrs = { @Attr(name = "aliases", value = BatchFluoAnalysis.ALIASES) })
-public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAnalysis{
+@Plugin(type=BatchPreprocessing.class, name = BatchPreprocessing.NAME,
+      attrs = { @Attr(name = "aliases", value = BatchPreprocessing.ALIASES) })
+public class DefaultBatchPreprocessing extends AbstractOp implements BatchPreprocessing{
 
    @Parameter
    private String d;
@@ -30,9 +28,6 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
 
    @Parameter
    private String suffix;
-
-   @Parameter
-   private int met;
 
    @Override
    public void run() {
@@ -51,25 +46,10 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
 
 
       for (int serie : serieNbPos.keySet()) {
-         SOCVisualizer visualizer = new SOCVisualizer(d + "|" + serieNbPos.get(serie), usingChannels);
-         visualizer.setVisible(true);
-         DefaultSetOfCells soc = new DefaultSetOfCells(serieNbPos.get(serie));
          String processedImgFolder = fluoDir + "_processed_" + serieNbPos.get(serie);
          FileUtils.createFolder(processedImgFolder);
-   
-         ImagePlus[] processedChs = ImgUtils.getChImages(usingChannels, imgPath, serie, processedImgFolder);
-         MaarsFluoAnalysis.METHOD = met;
-         Thread th = new Thread(new MaarsFluoAnalysis(soc, processedChs, serieNbPos.get(serie),
-                 parameter, visualizer));
-         th.start();
-         try {
-            th.join();
-         } catch (InterruptedException e) {
-            e.printStackTrace();
-         }
-//         TODO to find a way to save these intermedia data
-//         soc.reset();
-//         visualizer.clear();
+         ImgUtils.getChImages(usingChannels, imgPath, serie, processedImgFolder);
+         System.out.println("Images are preprocessing and saved into : \\n" + processedImgFolder);
       }
    }
 }

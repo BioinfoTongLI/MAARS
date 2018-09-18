@@ -368,11 +368,12 @@ public class ImgUtils {
       return seriesImgNames;
    }
 
-   public static ImagePlus[] alignChannels(ImagePlus[] blurredImps, String savingPath, String[] arrayChannels) {
-      ImagePlus[] projectedImps = new ImagePlus[blurredImps.length];
-      for (int i = 0 ;  i < blurredImps.length; i++) {
+   public static ImagePlus[] alignChannels(ImagePlus[] imps, String savingPath, String[] arrayChannels) {
+      int nbOfImgs = imps.length;
+      ImagePlus[] projectedImps = new ImagePlus[nbOfImgs];
+      for (int i = 0 ;  i < nbOfImgs; i++) {
          IJ.log("Z-projecting...");
-         IJ.run(blurredImps[i], "Z Project...", "projection=[Max Intensity] all");
+         IJ.run(imps[i], "Z Project...", "projection=[Max Intensity] all");
          projectedImps[i] = IJ.getImage();
       }
       String tranfoFileName = "transformation_from_" + arrayChannels[1] + ".txt";
@@ -398,7 +399,8 @@ public class ImgUtils {
    }
 
    public static ImagePlus[] preprocessChs(ImagePlus concatenatedFluoImgs, String[] usingChannels,
-                                           String processedImgFolder, boolean gaussian_blur, boolean align){
+                                           String processedImgFolder, boolean gaussian_blur, boolean align,
+                                           boolean saveIntermedia){
       int totalChannel = Integer.parseInt(concatenatedFluoImgs.getStringProperty("SizeC"));
       double interval = concatenatedFluoImgs.getCalibration().frameInterval;
 
@@ -408,15 +410,19 @@ public class ImgUtils {
          processedChs = ImgUtils.blurChannels(processedChs);
          for (int i = 0; i < totalChannel; i++) {
             processedChs[i].getCalibration().frameInterval = interval;
-            IJ.saveAsTiff(processedChs[i], processedImgFolder + File.separator + usingChannels[i]
-                    + "_denoised");
+            if (saveIntermedia) {
+               IJ.saveAsTiff(processedChs[i], processedImgFolder + File.separator + usingChannels[i]
+                       + "_denoised");
+            }
          }
       }
       if (align) {
          processedChs = ImgUtils.alignChannels(processedChs, processedImgFolder, usingChannels);
          for (int i = 0; i < totalChannel; i++) {
             processedChs[i].getCalibration().frameInterval = interval;
-            IJ.saveAsTiff(processedChs[i], processedImgFolder + File.separator + usingChannels[i] + "_aligned");
+            if (saveIntermedia) {
+               IJ.saveAsTiff(processedChs[i], processedImgFolder + File.separator + usingChannels[i] + "_aligned");
+            }
          }
       }
       for (int i = 0; i < totalChannel; i++) {
@@ -424,6 +430,32 @@ public class ImgUtils {
          IJ.saveAsTiff(processedChs[i], processedImgFolder + File.separator + usingChannels[i] + "_final");
       }
       System.gc();
+      return processedChs;
+   }
+
+   public static ImagePlus[] getChImages(String[] usingChannels, String imgPath, int serie, String processedImgFolder) {
+      ImagePlus[] processedChs;
+      String firstChImgPath = processedImgFolder + File.separator + usingChannels[0] + "_final.tif";
+      String secChImgPath = processedImgFolder + File.separator + usingChannels[1] + "_final.tif";
+      if (FileUtils.exists(firstChImgPath) &&
+              FileUtils.exists(secChImgPath)) {
+         IJ.log("Images are previously preprocessed... if you want to redo analysis, please delete them.");
+         processedChs = new ImagePlus[]{
+                 IJ.openImage(firstChImgPath),
+                 IJ.openImage(secChImgPath)
+         };
+      } else {
+         ImagePlus concatenatedFluoImgs = null;
+         try {
+            concatenatedFluoImgs = ImgUtils.lociImport(imgPath, serie);
+         } catch (IOException | FormatException e) {
+            e.printStackTrace();
+            IJ.error("Can not load fluo images...");
+         }
+         assert concatenatedFluoImgs != null;
+         processedChs = ImgUtils.preprocessChs(concatenatedFluoImgs, usingChannels,
+                 processedImgFolder, true, true, true);
+      }
       return processedChs;
    }
 }

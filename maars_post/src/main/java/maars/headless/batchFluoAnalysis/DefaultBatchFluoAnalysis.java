@@ -30,7 +30,10 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
 
    @Parameter
    private String suffix;
-
+   
+   @Parameter
+   private String acq;
+   
    @Parameter
    private int met;
 
@@ -40,6 +43,8 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
       System.out.println(d);
       MaarsParameters parameter = MaarsParameters.fromFile(d + File.separator  + configName);
       parameter.setSavingPath(d);
+      parameter.setSegmentationParameter(MaarsParameters.SEG_PREFIX, "BF_" + acq + "_1");
+      parameter.setFluoParameter(MaarsParameters.FLUO_PREFIX, "FLUO_" + acq + "_1");
       parameter.save(d);
       String[] usingChannels = parameter.getUsingChannels().split(",", -1);
 
@@ -57,7 +62,8 @@ public class DefaultBatchFluoAnalysis extends AbstractOp implements BatchFluoAna
          String processedImgFolder = fluoDir + "_processed_" + serieNbPos.get(serie);
          FileUtils.createFolder(processedImgFolder);
    
-         ImagePlus[] processedChs = ImgUtils.getChImages(usingChannels, imgPath, serie, processedImgFolder);
+         ImagePlus[] processedChs = ImgUtils.getChImages(usingChannels, imgPath, serie, processedImgFolder,
+               true, true);
          MaarsFluoAnalysis.METHOD = met;
          Thread th = new Thread(new MaarsFluoAnalysis(soc, processedChs, serieNbPos.get(serie),
                  parameter, visualizer));

@@ -433,7 +433,8 @@ public class ImgUtils {
       return processedChs;
    }
 
-   public static ImagePlus[] getChImages(String[] usingChannels, String imgPath, int serie, String processedImgFolder) {
+   public static ImagePlus[] getChImages(String[] usingChannels, String imgPath, int serie,
+                                         String processedImgFolder, boolean doGaussianBlue, boolean doAlignment) {
       ImagePlus[] processedChs;
       String firstChImgPath = processedImgFolder + File.separator + usingChannels[0] + "_final.tif";
       String secChImgPath = processedImgFolder + File.separator + usingChannels[1] + "_final.tif";
@@ -454,7 +455,7 @@ public class ImgUtils {
          }
          assert concatenatedFluoImgs != null;
          processedChs = ImgUtils.preprocessChs(concatenatedFluoImgs, usingChannels,
-                 processedImgFolder, true, true, true);
+                 processedImgFolder, doGaussianBlue, doAlignment, true);
       }
       return processedChs;
    }

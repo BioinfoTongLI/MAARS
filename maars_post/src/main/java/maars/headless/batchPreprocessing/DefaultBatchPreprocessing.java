@@ -1,6 +1,5 @@
 package maars.headless.batchPreprocessing;
 
-import ij.ImagePlus;
 import maars.main.MaarsParameters;
 import maars.main.Maars_Interface;
 import maars.utils.FileUtils;
@@ -28,13 +27,27 @@ public class DefaultBatchPreprocessing extends AbstractOp implements BatchPrepro
 
    @Parameter
    private String suffix;
-
+   
+   @Parameter
+   private String acq;
+   
+   @Parameter
+   private boolean doGaussianBlur;
+   
+   @Parameter
+   private boolean doAlignment;
+   
+   
    @Override
    public void run() {
       Maars_Interface.copyDeps();
       System.out.println(d);
       MaarsParameters parameter = MaarsParameters.fromFile(d + File.separator  + configName);
+      
       parameter.setSavingPath(d);
+      parameter.setSegmentationParameter(MaarsParameters.SEG_PREFIX, "BF_" + acq + "_1");
+      parameter.setFluoParameter(MaarsParameters.FLUO_PREFIX, "FLUO_" + acq + "_1");
+      
       parameter.save(d);
       String[] usingChannels = parameter.getUsingChannels().split(",", -1);
 
@@ -48,7 +61,7 @@ public class DefaultBatchPreprocessing extends AbstractOp implements BatchPrepro
       for (int serie : serieNbPos.keySet()) {
          String processedImgFolder = fluoDir + "_processed_" + serieNbPos.get(serie);
          FileUtils.createFolder(processedImgFolder);
-         ImgUtils.getChImages(usingChannels, imgPath, serie, processedImgFolder);
+         ImgUtils.getChImages(usingChannels, imgPath, serie, processedImgFolder, doGaussianBlur, doAlignment);
          System.out.println("Images are preprocessing and saved into : \\n" + processedImgFolder);
       }
    }

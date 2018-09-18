@@ -35,6 +35,9 @@ public class DefaultBatchSegmentation extends AbstractOp implements BatchSegment
    private String suffix;
    
    @Parameter
+   private String acq;
+   
+   @Parameter
    private boolean splitted;
 
    @Override
@@ -44,6 +47,8 @@ public class DefaultBatchSegmentation extends AbstractOp implements BatchSegment
          logger.info(d);
          MaarsParameters parameter = MaarsParameters.fromFile(d + File.separator  + configName);
          parameter.setSavingPath(d);
+         parameter.setSegmentationParameter(MaarsParameters.SEG_PREFIX, "BF_" + acq + "_1");
+         parameter.setFluoParameter(MaarsParameters.FLUO_PREFIX, "FLUO_" + acq + "_1");
          parameter.save(d);
          String segDir = d + File.separator + parameter.getSegmentationParameter(MaarsParameters.SEG_PREFIX);
          File[] allFiles = Objects.requireNonNull(new File(segDir).listFiles(

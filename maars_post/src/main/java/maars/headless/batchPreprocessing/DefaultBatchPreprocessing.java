@@ -45,8 +45,8 @@ public class DefaultBatchPreprocessing extends AbstractOp implements BatchPrepro
       MaarsParameters parameter = MaarsParameters.fromFile(d + File.separator  + configName);
       
       parameter.setSavingPath(d);
-      parameter.setSegmentationParameter(MaarsParameters.SEG_PREFIX, "BF_" + acq + "_1");
-      parameter.setFluoParameter(MaarsParameters.FLUO_PREFIX, "FLUO_" + acq + "_1");
+      parameter.setSegmentationParameter(MaarsParameters.SEG_PREFIX, "BF_" + acq);
+      parameter.setFluoParameter(MaarsParameters.FLUO_PREFIX, "FLUO_" + acq);
       
       parameter.save(d);
       String[] usingChannels = parameter.getUsingChannels().split(",", -1);

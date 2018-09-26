@@ -1,7 +1,7 @@
 #@OpService ops
 params = {
-	"/media/tongli/0ABC6EF952B52BF5/screening_nikon/calibrated/20180918_mph1_bub3" : ["45", "85"], 
-	"/media/tongli/0ABC6EF952B52BF5/screening_nikon/calibrated/20180918_wt_mad3" : ["85" , "140"]}
+	"/media/tongli/transfer/screening-2018/20180921_mph1_mad3" : ["45_1", "85_1"]
+	}
 suffix = "tif"
 
 for p in params:

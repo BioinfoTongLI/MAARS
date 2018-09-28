@@ -393,7 +393,7 @@ public class ImgUtils {
    public static ImagePlus[] blurChannels(ImagePlus[] chs){
       IJ.log("Denoising the image with 3D-blurring...");
       for (ImagePlus im : chs){
-         IJ.run(im, "Gaussian Blur 3D...", "x=1.2 y=1.2 z=2.4");
+         IJ.run(im, "Gaussian Blur 3D...", "x=1.0 y=1.0 z=2.0");
       }
       return chs;
    }

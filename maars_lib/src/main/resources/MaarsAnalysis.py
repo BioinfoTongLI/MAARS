@@ -26,6 +26,7 @@ if __name__ == '__main__':
     path_to_mito_features = [existing_paths[i] for i in range(len(existing_paths)) if mitoFilter[i]]
 
     df_sp_lens = analyser.get_elongations(path_to_mito_features)
+    df_sp_lens.to_hdf(root / Constants.MITO_DIR / "mitotic_elongations.h5", key="elongation")
     # plotting#################
     Plotting.plot_elong(df_sp_lens, root / Constants.MITO_DIR)
 
@@ -46,6 +47,7 @@ if __name__ == '__main__':
 
     mito_cell_numbers = [int(x) for x in original_dots_features_df.index.levels[-2]]
     mito_cell_roi_features = cell_rois_features.loc[mito_cell_numbers]
+    mito_cell_roi_features.to_hdf(root / Constants.MITO_DIR / "mito_cell_roi_features.h5", key="mito_cell_roi_features")
     geos = ComputeFeatures.compute_geometries(original_dots_features_df, mito_cell_roi_features)
     # print(geos.groupby("Cell").plot())
     # import matplotlib.pyplot as plt
@@ -58,7 +60,5 @@ if __name__ == '__main__':
     # plt.show()
 
     geos.to_hdf(root / Constants.MITO_DIR / "calculated_geos.h5", key="geos")
-    df_sp_lens.to_hdf(root / Constants.MITO_DIR / "mitotic_elongations.h5", key="elongation")
-    mito_cell_roi_features.to_hdf(root / Constants.MITO_DIR / "mito_cell_roi_features.h5", key="mito_cell_roi_features")
     analyser.shutdown()
-    print("Done")
+print("Done")

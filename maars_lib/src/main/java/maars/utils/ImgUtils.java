@@ -5,11 +5,10 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
-import ij.io.FileInfo;
 import ij.measure.Calibration;
+import ij.measure.ResultsTable;
 import ij.plugin.ChannelSplitter;
 import ij.plugin.RoiScaler;
-import ij.plugin.ZProjector;
 import loci.formats.FormatException;
 import loci.formats.ImageReader;
 import loci.formats.MetadataTools;
@@ -375,15 +374,33 @@ public class ImgUtils {
          IJ.log("Z-projecting...");
          IJ.run(imps[i], "Z Project...", "projection=[Max Intensity] all");
          projectedImps[i] = IJ.getImage();
+         projectedImps[i].hide();
       }
+
+      int imgWidth = projectedImps[1].getWidth();
+      int imgHeight = projectedImps[1].getWidth();
+
+      int cropMagnitude = 2;
+      int newW = Math.floorDiv(imgWidth, cropMagnitude);
+      int newH = Math.floorDiv(imgHeight, cropMagnitude);
+      int selectionOriginX = Math.floorDiv(imgWidth, 2) - newW / 2;
+      int selectionOriginY = Math.floorDiv(imgHeight, 2) - newH / 2;
+
       String tranfoFileName = "transformation_from_" + arrayChannels[1] + ".txt";
-      IJ.log("Correcting image drifts with MultiStackReg...");
-      IJ.run(projectedImps[1], "MultiStackReg", "stack_1=[" + projectedImps[1].getTitle() +
-              "] action_1=Align file_1=[" + savingPath + File.separator + tranfoFileName +
-            "] stack_2=None action_2=Ignore file_2=[] transformation=Translation save");
-      IJ.run(projectedImps[0], "MultiStackReg", "stack_1=[" + projectedImps[0].getTitle() +
-              "] action_1=[Load Transformation File] file_1=" + savingPath + File.separator + tranfoFileName +
-              " stack_2=None action_2=Ignore file_2=[] transformation=Translation");
+      IJ.run(projectedImps[1], "Align slices in stack...", "method=5 windowsizex=" +
+              newW + " windowsizey=" + newH + " x0=" + selectionOriginX + " y0=" + selectionOriginY +
+              " swindow=0 subpixel=false itpmethod=0 ref.slice=1 show=true");
+      projectedImps[1].killRoi();
+      IJ.saveAs("Results", savingPath + File.separator + tranfoFileName);
+      ResultsTable rt = ResultsTable.getResultsTable();
+      for (int i = 0; i < projectedImps[0].getNFrames()-1; i++){
+         projectedImps[0].setSlice((int) rt.getValue("Slice", i));
+         projectedImps[0].getProcessor().translate(
+                 (int) rt.getValue("dX", i),
+                 (int) rt.getValue("dY", i));
+      }
+      rt.reset();
+      IJ.run("Clear Results", "");
       for (ImagePlus im : projectedImps) {
          im.hide();
       }

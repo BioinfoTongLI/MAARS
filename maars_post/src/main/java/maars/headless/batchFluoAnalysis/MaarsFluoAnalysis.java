@@ -111,6 +111,7 @@ public class MaarsFluoAnalysis implements Runnable{
          chAnalysisTasks.put(channel, future);
       }
       tasksSet.add(chAnalysisTasks);
+      es.shutdown();
    }
 
 

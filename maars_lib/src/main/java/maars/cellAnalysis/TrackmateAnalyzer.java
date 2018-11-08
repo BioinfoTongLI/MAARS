@@ -19,6 +19,7 @@ import maars.agents.DefaultSetOfCells;
 import fiji.plugin.trackmate.Model;
 import fiji.plugin.trackmate.Settings;
 import fiji.plugin.trackmate.TrackMate;
+import maars.utils.ImgUtils;
 
 public class TrackmateAnalyzer implements Runnable {
 
@@ -35,7 +36,9 @@ public class TrackmateAnalyzer implements Runnable {
         for (int i = 1 ; i <= soc.size(); i++){
             fluoImage.setRoi(soc.getCell(i).getCellShapeRoi());
             Duplicator duplicator = new Duplicator();
-            targetImgs[i-1] = duplicator.run(fluoImage);
+            ImagePlus temp_img = duplicator.run(fluoImage);
+            temp_img.setRoi(ImgUtils.centerCroppedRoi(soc.getCell(i).getCellShapeRoi()));
+            targetImgs[i-1] = temp_img;
         }
         this.radius = rad;
         this.quality = qual;
@@ -102,7 +105,7 @@ public class TrackmateAnalyzer implements Runnable {
 
             ok = trackmate.process();
             if (!ok) {
-                IJ.log(trackmate.getErrorMessage() + "-- cell # : " + (i + 1));
+                IJ.log(trackmate.getErrorMessage() + "-- cell # : " + (i + 1) + "_" + this.channel);
             }else{
                 soc.addPotentialMitosisCell(i+1);
                 soc.getCell(i+1).putModel(channel, trackmate.getModel());

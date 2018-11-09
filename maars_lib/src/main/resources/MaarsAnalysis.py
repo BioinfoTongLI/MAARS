@@ -23,12 +23,15 @@ if __name__ == '__main__':
     paths_to_features = analyser.get_paths_to_feature()
     existing_paths = Loader.validate_paths(paths_to_features)
     mitoFilter = analyser.get_mitosis_filter(existing_paths)
-    path_to_mito_features = [existing_paths[i] for i in range(len(existing_paths)) if mitoFilter[i]]
-
-    df_sp_lens = analyser.get_elongations(path_to_mito_features)
+    path_to_mito_features = existing_paths[mitoFilter]
+    path_to_mito_kt_features = [Path(str(path).replace("CFP", "GFP")) for path in path_to_mito_features]
+    df_sp_lens = analyser.get_raw_elongations(path_to_mito_features)
+    df_kt_lens = analyser.get_raw_elongations(path_to_mito_kt_features)
     df_sp_lens.to_hdf(root / Constants.MITO_DIR / "mitotic_elongations.h5", key="elongation")
+    df_kt_lens.to_hdf(root / Constants.MITO_DIR / "mitotic_kt_elongations.h5", key="elongation")
     # plotting#################
     Plotting.plot_elong(df_sp_lens, root / Constants.MITO_DIR)
+    Plotting.plot_elong(df_kt_lens, root / Constants.MITO_DIR)
 
     path_to_mito_pole_spots = [Path.joinpath(p.parent.parent, analyser.csts.SPOTS, p.stem + '.xml')
                                for p in path_to_mito_features]
@@ -61,4 +64,4 @@ if __name__ == '__main__':
 
     geos.to_hdf(root / Constants.MITO_DIR / "calculated_geos.h5", key="geos")
     analyser.shutdown()
-print("Done")
+    print("Done")

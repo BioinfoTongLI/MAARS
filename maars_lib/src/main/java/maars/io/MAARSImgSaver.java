@@ -22,6 +22,7 @@ public class MAARSImgSaver {
    }
 
    public void saveImgs(ImagePlus[] entireField, Roi roi, int cellNb){
+      IJ.setBackgroundColor(0, 0, 0);
       ImagePlus croppedImg;
       for (int j = 1; j <= chNames.length; j++) {
          String pathToCroppedImg = croppedImgDir + String.valueOf(cellNb) + "_" + chNames[j-1] + ".tif";

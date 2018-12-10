@@ -17,51 +17,54 @@ if __name__ == '__main__':
     args = Loader.set_attributes_from_cmd_line()
     root = Path(args.baseDir)
     params = Loader.load_parameters(root)
-    analyser = MaarsAnalyzer(params, pos=args.pos, calibration=args.calibration,
-                             to_ch5=args.ch5, interval=args.interval)
+    analyser = MaarsAnalyzer(params, pos=args.pos, calibration=args.calibration, interval=args.interval)
 
-    paths_to_features = analyser.get_paths_to_feature()
-    existing_paths = Loader.validate_paths(paths_to_features)
-    mitoFilter = analyser.get_mitosis_filter(existing_paths)
-    path_to_mito_features = existing_paths[mitoFilter]
-    path_to_mito_kt_features = [Path(str(path).replace("CFP", "GFP")) for path in path_to_mito_features]
-    df_sp_lens = analyser.get_raw_elongations(path_to_mito_features)
-    df_kt_lens = analyser.get_raw_elongations(path_to_mito_kt_features)
-    df_sp_lens.to_hdf(root / Constants.MITO_DIR / "mitotic_elongations.h5", key="elongation")
-    df_kt_lens.to_hdf(root / Constants.MITO_DIR / "mitotic_kt_elongations.h5", key="elongation")
-    # plotting#################
-    Plotting.plot_elong(df_sp_lens, root / Constants.MITO_DIR)
-    Plotting.plot_elong(df_kt_lens, root / Constants.MITO_DIR)
+    spots = Loader.load_all_spots(analyser.csts.FLUO_SPOTS).swaplevel(0, 2).sort_index()
+    spots.index.names = ["TimePoint", "Channel", "Cell", "ID_dot"]
+    spots.to_hdf(analyser.csts.MITO_DIR / "original_spots.h5", key="spots")
 
-    path_to_mito_pole_spots = [Path.joinpath(p.parent.parent, analyser.csts.SPOTS, p.stem + '.xml')
-                               for p in path_to_mito_features]
-    validated_pole_paths = Loader.validate_paths(path_to_mito_pole_spots)
-    poles = Loader.load_spots(validated_pole_paths)
+    # spots = pd.read_hdf(analyser.csts.MITO_DIR / "original_spots.h5")
+    # spots.index.names = ["TimePoint", "Channel", "Cell", "dot_id"]
 
-    path_to_mito_kt_spots = [Path.joinpath(p.parent, p.stem.split("_")[0] + "_" + params[Constants.KT_CH] + ".xml")
-                             for p in path_to_mito_pole_spots]
-    validated_kt_paths = Loader.validate_paths(path_to_mito_kt_spots)
-    kts = Loader.load_spots(validated_kt_paths)
+    xy = spots[["POSITION_X", "POSITION_Y"]].astype(np.float)
+    gb_t_cell = xy.groupby(["TimePoint", "Cell"])
+    geos = gb_t_cell.apply(ComputeFeatures.evaluate, roi_features=analyser.cell_rois_features)
+    geos.to_hdf(analyser.csts.MITO_DIR / "geos.h5", key="geos")
 
-    original_dots_features_df = ComputeFeatures.merge_kt_spb(poles.unstack(level=[0, 1]), kts.unstack(level=[0, 1]))
-    original_dots_features_df.to_hdf(root / Constants.MITO_DIR / "original_dots_features.h5", "original_dots_features")
+    geos = pd.read_hdf(analyser.csts.MITO_DIR / "geos.h5")
+    # print(geos.columns)
 
-    cell_rois_features = pd.read_csv(analyser.csts.ROI_FEATURES, index_col=0)
+    sp_lens = geos["sp_len"].unstack(level=[1])
 
-    mito_cell_numbers = [int(x) for x in original_dots_features_df.index.levels[-2]]
-    mito_cell_roi_features = cell_rois_features.loc[mito_cell_numbers]
-    mito_cell_roi_features.to_hdf(root / Constants.MITO_DIR / "mito_cell_roi_features.h5", key="mito_cell_roi_features")
-    geos = ComputeFeatures.compute_geometries(original_dots_features_df, mito_cell_roi_features)
-    # print(geos.groupby("Cell").plot())
-    # import matplotlib.pyplot as plt
+    cells_has_sp_mask = sp_lens.apply(lambda one_series: one_series.any())
+    cells_has_sp_mask.to_hdf(analyser.csts.MITO_DIR / "has_sp_mask.h5", key="has_sp_mask")
+
+    sp_mito_filter = sp_lens.apply(is_in_mitosis,
+                                   p=analyser.csts.DYNAMIC_P_THRESHOLD,
+                                   min_seg_len=analyser.csts.MIN_SEG_LEN)
+    sp_mito_filter.to_hdf(analyser.csts.MITO_DIR / "mitosis_mask.h5", key="mitosis")
+
+    mito_elong = sp_lens.loc[:, sp_mito_filter]
+    # plt.plot(mito_elong)
     # plt.show()
+
+    kt_area = geos["kt_area"].unstack(level=[1])
+    exist_kt_area = kt_area.apply(lambda one_series: one_series.any())
+    exist_kt_area.to_hdf(analyser.csts.MITO_DIR / "has_kt_cloud.h5", key="has_kt_cloud")
+
+    kt_area_data = sp_lens.loc[:, exist_kt_area]
+    plt.plot(kt_area_data)
+    plt.show()
+
+    has_kt_area_and_sp_elong = exist_kt_area & sp_mito_filter
+    has_kt_area_and_sp_elong.to_hdf(analyser.csts.MITO_DIR / "has_kt_cloud_and_mitosis.h5",
+                                    key="has_kt_cloud_and_mitosis")
+
+    has_kt_area_or_sp_elong = exist_kt_area | sp_mito_filter
+    has_kt_area_or_sp_elong.to_hdf(analyser.csts.MITO_DIR / "has_kt_area_or_sp_elong.h5",
+                                   key="has_kt_area_or_sp_elong")
+
+    # Plotting.plot_elong(sp_lens, analyser.csts.MITO_DIR)
+
     # time_table = analyser.get_time_table(df_sp_lens)
-    # print(time_table)
-    # import matplotlib.pyplot as plt
-    # for c in sp_geos.keys():
-    #     sp_geos[c].plot()
-    # plt.show()
-
-    geos.to_hdf(root / Constants.MITO_DIR / "calculated_geos.h5", key="geos")
-    analyser.shutdown()
     print("Done")
